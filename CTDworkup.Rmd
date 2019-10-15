@@ -13,6 +13,8 @@ library(tidyverse)
 library(scales)
 library(viridisLite)
 library(DT)
+library(cowplot)
+library(knitr)
 ```
 
 ## Temperature and Salinity Workup
@@ -51,13 +53,15 @@ ggplot(allTS, aes(DT,Temperature))+
   geom_line(y=-1.5)+
   geom_point(data=YSI)+
   facet_wrap(~Station)+
-  theme(legend.position="bottom")
+  theme(legend.position="bottom")+
+  theme_cowplot()
 
 ggplot(allTS, aes(DT,Salinity))+
   geom_point(size=1.1, alpha=0.5, aes(color=Instrument))+
   geom_point(data=YSI)+
   facet_wrap(~Station)+
-  theme(legend.position="bottom")
+  theme(legend.position="bottom")+
+  theme_cowplot()
 
 ```
 
@@ -70,9 +74,6 @@ Inst.compare<-StarOddi%>%select(Station, DT, Temp_SO=Temp_C, Sal_SO=Sal)%>%
   select(Station, DT, Temp_SO, Sal_SO, Temp_RBR=Temperature, Sal_RBR=Salinity)%>%
   full_join(TCM_Temp, by=c("Station", "DT"="ISO 8601 Time"))%>%
   select(Station, DT, Temp_SO, Sal_SO, Temp_RBR, Sal_RBR, Temp_TCM=`Temperature (C)`)
-
-
-
 
 ```
 
@@ -88,14 +89,15 @@ datatable(Itable, caption="Diffs b/n instruments: TEMP and SAL") %>%
   formatRound(columns=c("mSOvRBR_Temp","mTCMvRBR_Temp","mSOvRBR_Sal"), digits=3)
 ```
 
-```{r comptoYSI echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+```{r 1to1, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 Inst.compare%>%filter(Station %in% c("EELD1","EWLD2","JALD2","KALD2"))%>%
   ggplot(aes(Temp_SO, Temp_RBR,color=DT))+
   geom_point(alpha=0.4)+
   scale_color_gradientn(colors = viridis(100), trans="time")+
   geom_abline(intercept=0, slope=1)+
   facet_wrap(~Station)+
-  ggtitle("Star Oddi vs RBR Temps")
+  ggtitle("Star Oddi vs RBR Temps")+
+  theme_cowplot()
 
 Inst.compare%>%filter(Station %in% c("EELD1","EWLD2","JALD2","KALD2"))%>%
   ggplot(aes(Sal_SO, Sal_RBR,color=DT))+
@@ -103,9 +105,14 @@ Inst.compare%>%filter(Station %in% c("EELD1","EWLD2","JALD2","KALD2"))%>%
   scale_color_gradientn(colors = viridis(100), trans="time")+
   geom_abline(intercept=0, slope=1)+
   facet_wrap(~Station)+
-  ggtitle("Star Oddi vs RBR Salinity")
+  ggtitle("Star Oddi vs RBR Salinity")+
+  theme_cowplot()
 
 
+
+```
+
+```{r comptoYSI, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 Ttable<-Inst.compare%>%inner_join(YSI, by=c("DT","Station"))%>%
   select(Station, DT, Temp_YSI=Temperature, Temp_SO, Temp_RBR,Temp_TCM)%>%
   filter(!is.na(DT))
@@ -178,14 +185,16 @@ ggplot(StarOddi, aes(Sal, Temp_C,color=DT))+
   geom_abline(slope = mod$coefficients[2], intercept = mod$coefficients[1])+
   scale_color_gradientn(colors = viridis(100), trans="time")+
   facet_wrap(~Station)+
-  ggtitle("StarOddi")
+  ggtitle("StarOddi")+
+  theme_cowplot()
 
 ggplot(RBR, aes(Salinity, Temperature,color=DT))+
   geom_point()+
   geom_abline(slope = mod$coefficients[2], intercept = mod$coefficients[1])+
   scale_color_gradientn(colors = viridis(100), trans="time")+
   facet_wrap(~Station)+
-  ggtitle("RBR")
+  ggtitle("RBR")+
+  theme_cowplot()
 ```
 
 
@@ -198,43 +207,49 @@ RBR2<-TSanom_workup(RBR, "Temperature", "Conductivity", .002,.01)
 SO2<-TSanom_workup(StarOddi, "Temp_C", "Cond_mspercm", .1,2)
 
 ggplot(RBR2, aes(DT,Salinity))+
-     geom_point(size=1.1, alpha=0.5, aes(color=anom))+
-     facet_wrap(~Station)+
-     theme(legend.position="bottom")
+  geom_point(size=1.1, alpha=0.5, aes(color=anom))+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")+
+  theme_cowplot()
 
 ggplot(SO2, aes(DT,Sal))+
-     geom_point(size=1.1, alpha=0.5, aes(color=anom))+
-     facet_wrap(~Station)+
-     theme(legend.position="bottom")
+  geom_point(size=1.1, alpha=0.5, aes(color=anom))+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")+
+  theme_cowplot()
 ```
 #Choose datasets to use in final table
 ##color=StarOddi, black=RBR
 ##use KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
-```{r chose_datasets echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+```{r chose_datasets, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 
 
-SO2%>%filter(Station=="KALD1"|Station=="KALD1_calibrated"|Station=="KALD1_calibratedCond"|Station=="KALD2")%>%
+SO2%>%filter(Station %in% c("KALD1","KALD1_calibrated","KALD1_calibratedCond","KALD2"))%>%
   ggplot(aes(DT,Sal))+
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="KALD2",],aes(DT,Salinity), alpha=0.6)+
+  theme_cowplot()+
   theme(legend.position="bottom")
 
-SO2%>%filter(Station=="KALD1"|Station=="KALD1_calibrated"|Station=="KALD1_calibratedCond"|Station=="KALD2")%>%
+SO2%>%filter(Station %in% c("KALD1","KALD1_calibrated","KALD1_calibratedCond","KALD2"))%>%
   ggplot(aes(DT,Temp_C))+
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="KALD2",],aes(DT,Temperature), alpha=0.6)+
+  theme_cowplot()+
   theme(legend.position="bottom")
 
-SO2%>%filter(Station=="EWLD1"|Station=="EWLD1_calibrated"|Station=="EWLD1_calibratedCond"|Station=="EWLD2")%>%
+SO2%>%filter(Station %in% c("EWLD1","EWLD1_calibrated","EWLD1_calibratedCond","EWLD2"))%>%
   ggplot(aes(DT,Sal))+
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="EWLD2",],aes(DT,Salinity), alpha=0.6)+
+  theme_cowplot()+
   theme(legend.position="bottom")
 
-SO2%>%filter(Station=="EWLD1"|Station=="EWLD1_calibrated"|Station=="EWLD1_calibratedCond"|Station=="EWLD2")%>%
+SO2%>%filter(Station %in% c("EWLD1","EWLD1_calibrated","EWLD1_calibratedCond","EWLD2"))%>%
   ggplot(aes(DT,Temp_C))+
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="EWLD2",],aes(DT,Temperature), alpha=0.6)+
+  theme_cowplot()+
   theme(legend.position="bottom")
 
 
@@ -242,7 +257,7 @@ SO2%>%filter(Station=="EWLD1"|Station=="EWLD1_calibrated"|Station=="EWLD1_calibr
 
 
 ##Select the datasets
-SO3<-SO2%>%filter(Station!="KALD1"&Station!="KALD1_calibratedCond"&
+SO3<-SO2%>%filter(Station !="KALD1"&Station!="KALD1_calibratedCond"&
                     Station!="EWLD1"&Station!="EWLD1_calibratedTC")%>%
   mutate(Station=str_sub(Station,1,5),
          calibrated=case_when(Station=="KALD1"|Station=="EWLD1" ~ TRUE))
@@ -291,17 +306,11 @@ ggplot(SO_final, aes(DT,Temp_C))+
 RBR_final<-RBR_final[!is.na(RBR_final$Station),]
 RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00")
 
-#give cond and sal columns invalid codes
-RBR_final[,3:12][is.na(RBR_final[,3:12])] <- -9999
+# remove unneeded cols
 RBR_final<-RBR_final%>%select(-anom, -flag)
-
 
 SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
                              Speed.of.sound=SoundVel_mpers, Instrument,flags,calibrated)
-SO_final[,3:7][is.na(SO_final[,3:7])] <- -9999
-
-write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
-write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
 
 
 ggplot(RBR_final, aes(DT, Temperature))+
@@ -320,3 +329,9 @@ ggplot(RBR_final, aes(DT, Sea.pressure))+
   geom_point(aes(color=Station), alpha=0.5)
 
 ```
+
+```{r derived-data}
+write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
+write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
+```
+
