@@ -63,26 +63,33 @@ ggplot(allTS, aes(DT,Salinity))+
 
 ## Difference in readings between instruments
 
-```{r inst_compare, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=11, fig.height=8, fig.fullwidth=TRUE}
-library(knitr)
+```{r inst_compare, echo=FALSE, message=FALSE, warning=FALSE}
+
 Inst.compare<-StarOddi%>%select(Station, DT, Temp_SO=Temp_C, Sal_SO=Sal)%>%
   full_join(RBR, by=c("Station", "DT"))%>%
   select(Station, DT, Temp_SO, Sal_SO, Temp_RBR=Temperature, Sal_RBR=Salinity)%>%
   full_join(TCM_Temp, by=c("Station", "DT"="ISO 8601 Time"))%>%
   select(Station, DT, Temp_SO, Sal_SO, Temp_RBR, Sal_RBR, Temp_TCM=`Temperature (C)`)
 
+
+
+
+```
+
+```{r compTandS, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 Itable<-Inst.compare%>%
   mutate(Tempdiff_SOvRBR=Temp_SO-Temp_RBR, Tempdiff_TCMvRBR=Temp_TCM-Temp_RBR, Saldiff=Sal_SO-Sal_RBR)%>%
   group_by(Station)%>%
   summarize(mSOvRBR_Temp=mean(Tempdiff_SOvRBR, na.rm=T),
             mTCMvRBR_Temp=mean(Tempdiff_TCMvRBR, na.rm=T),
             mSOvRBR_Sal=mean(Saldiff, na.rm=T))
-###
-datatable(Itable)
-###
-kable(Itable, caption="Diffs b/n instruments: TEMP and SAL")
 
-Inst.compare%>%filter(Station=="EELD1"|Station=="EWLD2"|Station=="JALD2"|Station=="KALD2")%>%
+datatable(Itable, caption="Diffs b/n instruments: TEMP and SAL") %>% 
+  formatRound(columns=c("mSOvRBR_Temp","mTCMvRBR_Temp","mSOvRBR_Sal"), digits=3)
+```
+
+```{r comptoYSI echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+Inst.compare%>%filter(Station %in% c("EELD1","EWLD2","JALD2","KALD2"))%>%
   ggplot(aes(Temp_SO, Temp_RBR,color=DT))+
   geom_point(alpha=0.4)+
   scale_color_gradientn(colors = viridis(100), trans="time")+
@@ -90,7 +97,7 @@ Inst.compare%>%filter(Station=="EELD1"|Station=="EWLD2"|Station=="JALD2"|Station
   facet_wrap(~Station)+
   ggtitle("Star Oddi vs RBR Temps")
 
-Inst.compare%>%filter(Station=="EELD1"|Station=="EWLD2"|Station=="JALD2"|Station=="KALD2")%>%
+Inst.compare%>%filter(Station %in% c("EELD1","EWLD2","JALD2","KALD2"))%>%
   ggplot(aes(Sal_SO, Sal_RBR,color=DT))+
   geom_point(alpha=0.4)+
   scale_color_gradientn(colors = viridis(100), trans="time")+
@@ -105,8 +112,11 @@ Ttable<-Inst.compare%>%inner_join(YSI, by=c("DT","Station"))%>%
 Stable<-Inst.compare%>%inner_join(YSI, by=c("DT","Station"))%>%
   select(Station, DT, Sal_YSI=Salinity, Sal_SO, Sal_RBR)%>%
   filter(!is.na(DT))
-kable(Ttable, caption="Diff in YSI and instruments: TEMPERATURE")
-kable(Stable, caption="Diff in YSI and instruments: SALINITY")
+
+datatable(Ttable, caption="Diff in YSI and instruments: TEMPERATURE")%>% 
+  formatRound(columns=c("Temp_RBR","Temp_TCM"), digits=3)
+datatable(Stable, caption="Diff in YSI and instruments: SALINITY")%>% 
+  formatRound(columns=c("Sal_RBR"), digits=3) 
 ```
 
 ##calibrate EWLD1 and KALD1 using YSI data
