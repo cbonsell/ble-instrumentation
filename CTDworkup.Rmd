@@ -1,0 +1,312 @@
+---
+title: "LTER Instrument Workup 2019"
+author: "Christina Bonsell"
+date: "Oct 4, 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, echo=FALSE, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(scales)
+library(viridisLite)
+library(DT)
+```
+
+## Temperature and Salinity Workup
+
+#Initial conclusions/questions:
+###1) Gotta throw out most, if not all EELD1 salinity data. I think these instruments ended up in the mud. Keep the StarOddi temp data from this station.
+###2) RBR seems more accurate than Star Oddi* (e.g fewer big dips in salinity/conductivity), but still has a scatter of questionable conductivity data. There's no "cup" to be fouled by sediment, so what is happening?
+###3) Some of the "non-anomoulus" data I would still throw out. After talking to Tim, this data should be left in but "flagged" in a new column. 
+
+```{r ysi_data, echo=FALSE, include=FALSE, message=FALSE}
+source('scr/CTDdata_import.R')
+YSI<- read_csv("data/YSI 2018to2019.csv")%>%
+  filter(DepthCat=="depth",Parameter %in% c("Temp.C","Sal","Cond"),
+         !Station %in% c("SILD1","SILD2","STLD1","STLD2"))%>%
+  select(Station,Parameter,Value,Datetime)%>%
+  mutate(DT=round_date(Datetime, unit="hour"))%>%
+  spread(Parameter, Value)%>%
+  mutate(Conductivity=Cond/1000)%>%
+  select(Station,DT,Salinity=Sal,Temperature=Temp.C, Conductivity)
+```
+
+## Compare instrument types (color points) to YSI data (black points)
+###EWLD1 and KALD1 could use calibration
+
+```{r inst_vs_ysi, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+allTS0<-StarOddi%>%
+  select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm, Instrument)%>%
+  bind_rows(RBR)
+allTS<-TCM_Temp%>%
+  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`, Instrument)%>%
+  bind_rows(allTS0)
+
+ggplot(allTS, aes(DT,Temperature))+
+  geom_point(size=1.1, alpha=0.5, aes(color=Instrument))+
+  geom_line(y=-1.8)+
+  geom_line(y=-1.5)+
+  geom_point(data=YSI)+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")
+
+ggplot(allTS, aes(DT,Salinity))+
+  geom_point(size=1.1, alpha=0.5, aes(color=Instrument))+
+  geom_point(data=YSI)+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")
+
+```
+
+## Difference in readings between instruments
+
+```{r inst_compare, echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+library(knitr)
+Inst.compare<-StarOddi%>%select(Station, DT, Temp_SO=Temp_C, Sal_SO=Sal)%>%
+  full_join(RBR, by=c("Station", "DT"))%>%
+  select(Station, DT, Temp_SO, Sal_SO, Temp_RBR=Temperature, Sal_RBR=Salinity)%>%
+  full_join(TCM_Temp, by=c("Station", "DT"="ISO 8601 Time"))%>%
+  select(Station, DT, Temp_SO, Sal_SO, Temp_RBR, Sal_RBR, Temp_TCM=`Temperature (C)`)
+
+Itable<-Inst.compare%>%
+  mutate(Tempdiff_SOvRBR=Temp_SO-Temp_RBR, Tempdiff_TCMvRBR=Temp_TCM-Temp_RBR, Saldiff=Sal_SO-Sal_RBR)%>%
+  group_by(Station)%>%
+  summarize(mSOvRBR_Temp=mean(Tempdiff_SOvRBR, na.rm=T),
+            mTCMvRBR_Temp=mean(Tempdiff_TCMvRBR, na.rm=T),
+            mSOvRBR_Sal=mean(Saldiff, na.rm=T))
+###
+datatable(Itable)
+###
+kable(Itable, caption="Diffs b/n instruments: TEMP and SAL")
+
+Inst.compare%>%filter(Station=="EELD1"|Station=="EWLD2"|Station=="JALD2"|Station=="KALD2")%>%
+  ggplot(aes(Temp_SO, Temp_RBR,color=DT))+
+  geom_point(alpha=0.4)+
+  scale_color_gradientn(colors = viridis(100), trans="time")+
+  geom_abline(intercept=0, slope=1)+
+  facet_wrap(~Station)+
+  ggtitle("Star Oddi vs RBR Temps")
+
+Inst.compare%>%filter(Station=="EELD1"|Station=="EWLD2"|Station=="JALD2"|Station=="KALD2")%>%
+  ggplot(aes(Sal_SO, Sal_RBR,color=DT))+
+  geom_point(alpha=0.4)+
+  scale_color_gradientn(colors = viridis(100), trans="time")+
+  geom_abline(intercept=0, slope=1)+
+  facet_wrap(~Station)+
+  ggtitle("Star Oddi vs RBR Salinity")
+
+
+Ttable<-Inst.compare%>%inner_join(YSI, by=c("DT","Station"))%>%
+  select(Station, DT, Temp_YSI=Temperature, Temp_SO, Temp_RBR,Temp_TCM)%>%
+  filter(!is.na(DT))
+Stable<-Inst.compare%>%inner_join(YSI, by=c("DT","Station"))%>%
+  select(Station, DT, Sal_YSI=Salinity, Sal_SO, Sal_RBR)%>%
+  filter(!is.na(DT))
+kable(Ttable, caption="Diff in YSI and instruments: TEMPERATURE")
+kable(Stable, caption="Diff in YSI and instruments: SALINITY")
+```
+
+##calibrate EWLD1 and KALD1 using YSI data
+
+```{r cal_EWLD_KALD1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+source('scr/TScalibration_functions.R')
+source('scr/CondtoSal_miliS.R')
+EWLD10<-StarOddi%>%filter(Station=="EWLD1")%>%
+  left_join(YSI, by=c("Station","DT"))%>%
+  mutate(row=1:which(DT==max(DT)))%>%
+  rename(fixedCond=Conductivity, fixedTemp=Temperature)
+dates<-which(!is.na(EWLD10$fixedCond))#identify where YSI measurements took place, ignore the June ones bc we were off Station
+EWLD10$fixedCond[1]<-EWLD10$Cond_mspercm[1]#YSI reading in Aug 2018 doesn't make sense
+EWLD10<-EWLD10[c(min(dates):max(dates)),]
+EWLD1<-TSmidcal_SO(EWLD10,dates[2])
+EWLD1$Salinity<-Cond.to.Sal(EWLD1$fixedCond,EWLD1$fixedTemp)
+
+EWLD1$Station<-"EWLD1_calibratedTC"
+
+EWLD1c<-EWLD1%>%mutate(Salinity=Cond.to.Sal(EWLD1$fixedCond,EWLD1$Temp_C))%>%
+  select(-fixedTemp)%>%rename(fixedTemp=Temp_C)
+EWLD1c$Station<-"EWLD1_calibratedCond"
+
+KALD10<-StarOddi%>%filter(Station=="KALD1")%>%
+  left_join(YSI, by=c("Station","DT"))%>%
+  mutate(row=1:which(DT==max(DT)))%>%
+  rename(fixedCond=Conductivity, fixedTemp=Temperature)
+dates<-which(!is.na(KALD10$fixedCond))#identify where YSI measurements took place, ignore the June ones bc we were off Station
+KALD10$fixedCond[1]<-KALD10$Cond_mspercm[1]#no YSI reading in Aug 2018
+KALD10$fixedTemp[1]<-KALD10$Temp_C[1]
+KALD10<-KALD10[c(1:max(dates)),]
+KALD1<-TSmidcal_SO(KALD10,dates[1])
+KALD1$Salinity<-Cond.to.Sal(KALD1$fixedCond,KALD1$fixedTemp)
+
+KALD1$Station<-"KALD1_calibratedTC"
+
+KALD1c<-KALD1%>%mutate(Salinity=Cond.to.Sal(KALD1$fixedCond,KALD1$Temp_C))%>%
+  select(-fixedTemp)%>%rename(fixedTemp=Temp_C)
+KALD1c$Station<-"KALD1_calibratedCond"
+
+calibrated<-bind_rows(EWLD1,EWLD1c, KALD1, KALD1c)%>%
+  select(-Temp_C,-Sal,-Cond_mspercm)%>%
+  rename(Sal=Salinity,Temp_C=fixedTemp,Cond_mspercm=fixedCond)
+
+StarOddi<-bind_rows(StarOddi,calibrated)
+
+```
+
+##T vs S to check for erroneous data
+```{r TvsS, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+
+xsc<-c(0,10,20,45)
+xtc<-c(0,-.55,-1.091,-2.515)
+mod<-lm(xtc~xsc)
+
+
+ggplot(StarOddi, aes(Sal, Temp_C,color=DT))+
+  geom_point()+
+  geom_abline(slope = mod$coefficients[2], intercept = mod$coefficients[1])+
+  scale_color_gradientn(colors = viridis(100), trans="time")+
+  facet_wrap(~Station)+
+  ggtitle("StarOddi")
+
+ggplot(RBR, aes(Salinity, Temperature,color=DT))+
+  geom_point()+
+  geom_abline(slope = mod$coefficients[2], intercept = mod$coefficients[1])+
+  scale_color_gradientn(colors = viridis(100), trans="time")+
+  facet_wrap(~Station)+
+  ggtitle("RBR")
+```
+
+
+###What to remove ("anom" data is below TS line givin instrument precision)
+
+```{r Id_anom, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+source('scr/TSoutliers_functions.R')
+
+RBR2<-TSanom_workup(RBR, "Temperature", "Conductivity", .002,.01)
+SO2<-TSanom_workup(StarOddi, "Temp_C", "Cond_mspercm", .1,2)
+
+ggplot(RBR2, aes(DT,Salinity))+
+     geom_point(size=1.1, alpha=0.5, aes(color=anom))+
+     facet_wrap(~Station)+
+     theme(legend.position="bottom")
+
+ggplot(SO2, aes(DT,Sal))+
+     geom_point(size=1.1, alpha=0.5, aes(color=anom))+
+     facet_wrap(~Station)+
+     theme(legend.position="bottom")
+```
+#Choose datasets to use in final table
+##color=StarOddi, black=RBR
+##use KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
+```{r chose_datasets echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+
+
+SO2%>%filter(Station=="KALD1"|Station=="KALD1_calibrated"|Station=="KALD1_calibratedCond"|Station=="KALD2")%>%
+  ggplot(aes(DT,Sal))+
+  geom_point(size=1.1, alpha=0.5, aes(color=Station))+
+  geom_point(data=RBR2[RBR2$Station=="KALD2",],aes(DT,Salinity), alpha=0.6)+
+  theme(legend.position="bottom")
+
+SO2%>%filter(Station=="KALD1"|Station=="KALD1_calibrated"|Station=="KALD1_calibratedCond"|Station=="KALD2")%>%
+  ggplot(aes(DT,Temp_C))+
+  geom_point(size=1.1, alpha=0.5, aes(color=Station))+
+  geom_point(data=RBR2[RBR2$Station=="KALD2",],aes(DT,Temperature), alpha=0.6)+
+  theme(legend.position="bottom")
+
+SO2%>%filter(Station=="EWLD1"|Station=="EWLD1_calibrated"|Station=="EWLD1_calibratedCond"|Station=="EWLD2")%>%
+  ggplot(aes(DT,Sal))+
+  geom_point(size=1.1, alpha=0.5, aes(color=Station))+
+  geom_point(data=RBR2[RBR2$Station=="EWLD2",],aes(DT,Salinity), alpha=0.6)+
+  theme(legend.position="bottom")
+
+SO2%>%filter(Station=="EWLD1"|Station=="EWLD1_calibrated"|Station=="EWLD1_calibratedCond"|Station=="EWLD2")%>%
+  ggplot(aes(DT,Temp_C))+
+  geom_point(size=1.1, alpha=0.5, aes(color=Station))+
+  geom_point(data=RBR2[RBR2$Station=="EWLD2",],aes(DT,Temperature), alpha=0.6)+
+  theme(legend.position="bottom")
+
+
+
+
+
+##Select the datasets
+SO3<-SO2%>%filter(Station!="KALD1"&Station!="KALD1_calibratedCond"&
+                    Station!="EWLD1"&Station!="EWLD1_calibratedTC")%>%
+  mutate(Station=str_sub(Station,1,5),
+         calibrated=case_when(Station=="KALD1"|Station=="EWLD1" ~ TRUE))
+```
+
+
+#Next step = Flagging data
+##Values below freezing line (with error) are flagged "INV" for Invalid
+##Values that are outliers, or appear to be instrument malfunction (as determined by a trained human) are flagged "QM" for Questionable Measurement
+
+
+```{r flag_data,  echo=FALSE, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+source('scr/data_flag.R')
+
+RBR_final<-RBR_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
+SO_final<-SO_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
+
+ggplot(RBR_final, aes(DT,Salinity))+
+     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+     facet_wrap(~Station)+
+     theme(legend.position="bottom")
+
+ggplot(SO_final, aes(DT,Sal))+
+     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+     facet_wrap(~Station)+
+     theme(legend.position="bottom")
+
+ggplot(RBR_final, aes(DT,Temperature))+
+     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+     facet_wrap(~Station)+
+     theme(legend.position="bottom")
+
+ggplot(SO_final, aes(DT,Temp_C))+
+     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+     facet_wrap(~Station)+
+     theme(legend.position="bottom")
+     
+```
+
+
+# Finalize tables
+```{r finalize, echo=FALSE, include=FALSE, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+#Finalize and write csvs
+
+#RBR puts NA at date at daylight savings time, grrr
+RBR_final<-RBR_final[!is.na(RBR_final$Station),]
+RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00")
+
+#give cond and sal columns invalid codes
+RBR_final[,3:12][is.na(RBR_final[,3:12])] <- -9999
+RBR_final<-RBR_final%>%select(-anom, -flag)
+
+
+SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
+                             Speed.of.sound=SoundVel_mpers, Instrument,flags,calibrated)
+SO_final[,3:7][is.na(SO_final[,3:7])] <- -9999
+
+write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
+write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
+
+
+ggplot(RBR_final, aes(DT, Temperature))+
+  geom_point(aes(color=Station), alpha=0.5)+
+  geom_point(data=SO_final, aes(DT, Temperature, color=Station), alpha=0.5)
+
+ggplot(RBR_final, aes(DT,Salinity))+
+  geom_point(aes(color=Station), alpha=0.5)+
+  geom_point(data=SO_final, aes(DT,Salinity, color=Station), alpha=0.5)
+
+ggplot(RBR_final, aes(DT, Conductivity))+
+  geom_point(aes(color=Station), alpha=0.5)+
+  geom_point(data=SO_final, aes(DT,Conductivity, color=Station), alpha=0.5)
+
+ggplot(RBR_final, aes(DT, Sea.pressure))+
+  geom_point(aes(color=Station), alpha=0.5)
+
+```

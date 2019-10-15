@@ -1,0 +1,46 @@
+---
+title: "LTER2019TCMworkup"
+author: "Christina Bonsell"
+date: "October 4, 2019"
+output: html_document
+---
+
+```{r setup, echo=FALSE, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(viridisLite)
+library(cowplot)
+```
+
+#Looks like JALD2 got knocked out by ice 
+#JALD1+KALD1+KALD2 got stuck in the ice or there was basically no current in those lagoons
+
+```{r look_at_data, echo=FALSE, include=FALSE, message=FALSE, warning=FALSE}
+source('scr/TCMdata_import.R')
+
+ggplot(TCM_Temp, aes(DT, Temperature))+
+  geom_line(aes(color=Station))+
+  theme_cowplot()
+
+ggplot(TCM_Curr, aes(DT, Speed_cm_s))+
+  geom_line(aes(color=Station))+
+  facet_wrap(~Station, scales="free")+
+  theme_cowplot()
+```
+
+#Datecut JALD2
+
+```{r JALD2}
+
+TCM_Temp %>% filter(Station=="JALD2") %>% 
+  ggplot(aes(DT, Temperature))+
+  geom_line(aes(color=Station))+
+  theme_cowplot()
+
+TCM_Curr %>% filter(Station=="JALD2") %>% 
+  ggplot(aes(DT, Speed_cm_s))+
+  geom_line(aes(color=Station))+
+  facet_wrap(~Station, scales="free")+
+  theme_cowplot()
+```
+
