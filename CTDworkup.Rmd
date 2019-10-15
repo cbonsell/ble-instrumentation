@@ -32,7 +32,9 @@ library(knitr)
 [CTD-QAQC.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTD-QAQC.Rmd) is a cleaned-up version that just spits out derived datasets and final plots
 
 ```{r ysi_data, echo=FALSE, include=FALSE, message=FALSE}
-source('scr/CTDdata_import.R')
+source('scr/CTDdata_import.R') #Star Oddi, RBR, and TCM data
+
+
 YSI<- read_csv("data/YSI 2018to2019.csv")%>%
   filter(DepthCat=="depth",Parameter %in% c("Temp.C","Sal","Cond"),
          !Station %in% c("SILD1","SILD2","STLD1","STLD2"))%>%
@@ -139,9 +141,11 @@ datatable(Stable, caption="Diff in YSI and instruments: SALINITY")%>%
 
 ##**Calibrate** EWLD1 and KALD1 using YSI data
 
-```{r cal_EWLD_KALD1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
-source('scr/TScalibration_functions.R')
-source('scr/CondtoSal_miliS.R')
+```{r cal_EWLD1_KALD1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+source('scr/TScalibration_functions.R') #functions to calibrate temperature, conductivity and salinity, using YSI calibration measurements
+source('scr/CondtoSal_miliS.R') #function to convert conductivity and temp to salinity
+
+
 EWLD10<-StarOddi%>%filter(Station=="EWLD1")%>%
   left_join(YSI, by=c("Station","DT"))%>%
   mutate(row=1:which(DT==max(DT)))%>%
@@ -323,7 +327,7 @@ RBR_final<-RBR_final%>%select(-anom, -flag)
 SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
                              Speed.of.sound=SoundVel_mpers, Instrument,flags,calibrated)
 
-
+# plots
 ggplot(RBR_final, aes(DT, Temperature))+
   geom_point(aes(color=Station), alpha=0.5)+
   geom_point(data=SO_final, aes(DT, Temperature, color=Station), alpha=0.5)
