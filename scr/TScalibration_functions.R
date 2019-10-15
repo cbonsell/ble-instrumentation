@@ -2,23 +2,35 @@
 ####Christina Bonsell
 ####Oct 2019
 
+
+
+#' Calibrate data 
+#' Based on initial calibration measurment and end calibration measurement
+#' Adjustment is linear
+#' @param raw df column of raw data
+#' @param calib df column that is blank except for the calibration values
+#' @param rowfirst the rownumber of the first calibration value
+#' @param rowlast the rownumber of the second (and last) calibration value
+#' @param rownums a column of row numbers
+#' @return calibrated column calib
 TS.adj<-function (raw, calib, rowfirst, rowlast, rownums){
-  #raw: df column of raw data
-  #calib: df column that is blank except for the calibration values
-  #rowfirst: the rownumber of the first calibration value
-  #rowlast: the rownumber of the second (and last) calibration value
-  #rownums: a column of row numbers
-  #out: vector where values will be filled in
+
+
   x1<-calib[rowfirst]-raw[rowfirst]
   x2<-calib[rowlast]-raw[rowlast]
   xslope<-(x2-x1)/(rowlast-rowfirst)
   calib<-raw+x1+((rownums-1)*xslope)
   
-  invisible(calib)
+  return(calib)
 }
 
+
+#' Calibrate StarOddi data 
+#' Based on initial calibration measurment and end calibration measurement
+#' @param dat a dataframe with rows:Cond_mspercm, Temp_C, fixedCond, fixedTemp
+#' @return calibrated dataframe
 TScal_SO<-function(dat){
-  #dat is a dataframe with rows:Cond_mspercm, Temp_C, fixedCond, fixedTemp
+  
   dat$row<-c(1:nrow(dat))
   dat$fixedTemp<-TS.adj(dat$Temp_C,dat$fixedTemp,1,nrow(dat),dat$row)
   dat$fixedCond<-TS.adj(dat$Cond_mspercm,dat$fixedCond,1,nrow(dat),dat$row)
@@ -26,8 +38,12 @@ TScal_SO<-function(dat){
   dat
 }
 
+#' Calibrate RBR data 
+#' Based on initial calibration measurment and end calibration measurement
+#' @param dat is a dataframe with rows:Conductivity, Temperature, fixedCond, fixedTemp
+#' @return calibrated dataframe
 TScal_RBR<-function(dat){
-  #dat is a dataframe with rows:Conductivity, Temperature, fixedCond, fixedTemp
+
   dat$row<-c(1:nrow(dat))
   dat$fixedTemp<-TS.adj(dat$Temperature,dat$fixedTemp,1,nrow(dat),dat$row)
   dat$fixedCond<-TS.adj(dat$Conductivity,dat$fixedCond,1,nrow(dat),dat$row)
@@ -35,9 +51,13 @@ TScal_RBR<-function(dat){
   dat
 }
 
+#' Calibrate StarOddi data with midpoint
+#' Based on initial calibration measurment, a midpoint measurement, and end calibration measurement
+#' @param dat a dataframe with rows:Cond_mspercm, Temp_C, fixedCond, fixedTemp
+#' @param midpoint the row number of the midpoint calibration
+#' @return calibrated dataframe
 TSmidcal_SO<-function(dat,midpoint){
-  #dat is a dataframe with rows:Cond_mspercm, Temp_C, fixedCond, fixedTemp
-  #midpoint is the row number of the midpoint calibration
+
   ln<-nrow(dat)
   
   dat$row<-c(1:nrow(dat))
@@ -51,9 +71,14 @@ TSmidcal_SO<-function(dat,midpoint){
   dat
 }
 
+
+#' Calibrate RBR data with midpoint
+#' Based on initial calibration measurment, a midpoint measurement, and end calibration measurement
+#' @param dat is a dataframe with rows:Conductivity, Temperature, fixedCond, fixedTemp
+#' @param midpoint the row number of the midpoint calibration
+#' @return calibrated dataframe
 TSmidcal_RBR<-function(dat,midpoint){
-  #dat is a dataframe with rows:Conductivity, Temperature, fixedCond, fixedTemp
-  #midpoint is the row number of the midpoint calibration
+
   ln<-nrow(dat)
   
   dat$row<-c(1:nrow(dat))
