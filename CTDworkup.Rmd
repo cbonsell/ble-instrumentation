@@ -17,12 +17,19 @@ library(cowplot)
 library(knitr)
 ```
 
-## Temperature and Salinity Workup
+## Temperature and Salinity Workup:
 
-#Initial conclusions/questions:
-###1) Gotta throw out most, if not all EELD1 salinity data. I think these instruments ended up in the mud. Keep the StarOddi temp data from this station.
-###2) RBR seems more accurate than Star Oddi* (e.g fewer big dips in salinity/conductivity), but still has a scatter of questionable conductivity data. There's no "cup" to be fouled by sediment, so what is happening?
-###3) Some of the "non-anomoulus" data I would still throw out. After talking to Tim, this data should be left in but "flagged" in a new column. 
+1. Compare datalogger data to each other and to YSI sonde data
+2. Present some background summaries and visualizations comparing instruments
+3. Choose datasets best representative of station hydrography, default to RBR
+4. Flag "invalid" data based to frezzing line
+5. Calibrate EWLD1 and KALD1 (StarOddi) using YSI data
+6. Show some comparison plots b/n calibrated and uncalibrated data
+7. Add "Qustionable measurement" flags to questionable conductivity/salinity data
+8. Write derived (calibrated, QA/QCd) dataset
+
+
+[CTD-QAQC.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTD-QAQC.Rmd) is a cleaned-up version that just spits out derived datasets and final plots
 
 ```{r ysi_data, echo=FALSE, include=FALSE, message=FALSE}
 source('scr/CTDdata_import.R')
@@ -38,6 +45,7 @@ YSI<- read_csv("data/YSI 2018to2019.csv")%>%
 
 ## Compare instrument types (color points) to YSI data (black points)
 ###EWLD1 and KALD1 could use calibration
+### in April in Jago (JAL), high amounts of stratification meant that YSI may not have hit correct depth and cond/sal reading may be off
 
 ```{r inst_vs_ysi, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 allTS0<-StarOddi%>%
@@ -83,7 +91,8 @@ Itable<-Inst.compare%>%
   group_by(Station)%>%
   summarize(mSOvRBR_Temp=mean(Tempdiff_SOvRBR, na.rm=T),
             mTCMvRBR_Temp=mean(Tempdiff_TCMvRBR, na.rm=T),
-            mSOvRBR_Sal=mean(Saldiff, na.rm=T))
+            mSOvRBR_Sal=mean(Saldiff, na.rm=T)) %>% 
+  filter(!is.na(mSOvRBR_Temp))
 
 datatable(Itable, caption="Diffs b/n instruments: TEMP and SAL") %>% 
   formatRound(columns=c("mSOvRBR_Temp","mTCMvRBR_Temp","mSOvRBR_Sal"), digits=3)
@@ -126,7 +135,9 @@ datatable(Stable, caption="Diff in YSI and instruments: SALINITY")%>%
   formatRound(columns=c("Sal_RBR"), digits=3) 
 ```
 
-##calibrate EWLD1 and KALD1 using YSI data
+
+
+##**Calibrate** EWLD1 and KALD1 using YSI data
 
 ```{r cal_EWLD_KALD1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 source('scr/TScalibration_functions.R')
@@ -172,12 +183,12 @@ StarOddi<-bind_rows(StarOddi,calibrated)
 
 ```
 
-##T vs S to check for erroneous data
+##T vs S to check for erroneous data via **freezing line***
 ```{r TvsS, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 
 xsc<-c(0,10,20,45)
 xtc<-c(0,-.55,-1.091,-2.515)
-mod<-lm(xtc~xsc)
+mod<-lm(xtc~xsc) #create freezing line
 
 
 ggplot(StarOddi, aes(Sal, Temp_C,color=DT))+
@@ -198,7 +209,7 @@ ggplot(RBR, aes(Salinity, Temperature,color=DT))+
 ```
 
 
-###What to remove ("anom" data is below TS line givin instrument precision)
+###What to flag ("anom" data is below TS line givin instrument precision)
 
 ```{r Id_anom, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 source('scr/TSoutliers_functions.R')
@@ -298,7 +309,7 @@ ggplot(SO_final, aes(DT,Temp_C))+
 ```
 
 
-# Finalize tables
+# Finalize tables and display data
 ```{r finalize, echo=FALSE, include=FALSE, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 #Finalize and write csvs
 
