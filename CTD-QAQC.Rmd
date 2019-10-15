@@ -1,0 +1,16 @@
+---
+title: "CTD-QAQC"
+author: "Christina Bonsell"
+date: "October 15, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libs, echo=FALSE, message=FALSE, include=FALSE}
+library(tidyverse)
+```
+
+# A cleaned-up version of [CTDworkup.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTDworkup.Rmd) that only spits out final dataset and plots
