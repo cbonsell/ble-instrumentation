@@ -1,10 +1,13 @@
 ####Flagging CTD data from 2018-2019 BLE LTER deployments
 ##also chooses "best" data set between RBR and Star Oddi
+## data chosen via "identify" funtion, where you can choose by point and click on plot (currently commented out)
 ##C Bonsell Oct 2019
 library(RColorBrewer)
 
-
+############
 ###RBR####
+############
+
 # RBR2$Salinity[RBR2$anom==T]<-NA
 # RBR2$Conductivity[RBR2$anom==T]<-NA
 # RBR2$`Specific conductivity`[RBR2$anom==T]<-NA
@@ -31,8 +34,10 @@ KALD2<-as.data.frame(x[4])
 
 RBR_flagged<-bind_rows(EWLD2,JALD2,KALD2)[,c(1:12,22,24)]
 
-
+############
 ###StarOddi####
+############
+
 #SO2$Sal[SO2$anom==T]<-NA
 #SO2$Cond_mspercm[SO2$anom==T]<-NA
 x<-SO3%>%mutate(flag=F)%>%group_split(Station)
