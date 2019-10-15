@@ -4,4 +4,4 @@ BLE LTER data workup for in situ instrumentation
 Christina Bonsell
 
 
-Scripts and mardown documentation for workign with RBR CTDs, Star Oddi CTs, and Lowell TCM (MAT1)
+Scripts and markdown documentation for working with RBR CTDs, Star Oddi CTs, and Lowell TCM (MAT1)
