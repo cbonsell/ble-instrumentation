@@ -39,8 +39,8 @@ RBR <- filelist %>%
 #Don't know what cols 11(temp?) and 12 are
 
 RBR<-RBR%>%mutate(Station=str_sub(FileName,29,33), DT=as.POSIXct(Timestamp, format="%d/%m/%Y %H:%M:%OS"))%>%
-  select(-Timestamp, -FileName, -X__1, -X__2)
-RBR<-RBR[,c(10,11,1:9)]
+  select(-Timestamp, -FileName, -...11, -...12)
+RBR<-RBR[,c(10,11,1:9)]# reorder columns
 
 
 
