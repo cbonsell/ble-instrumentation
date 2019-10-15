@@ -1,6 +1,10 @@
+#' Convert Conductivity to Salinity
+#' using equations from UNESCO 1983. Taken from James Douglass's Excel sheet
+#' @param cond Conductivity in miliSeimens/m^2/s
+#' @param temp Temperature in Celsius
+#' @example Cond.to.Sal(33.2, 1.2)
 Cond.to.Sal<- function (cond,temp) {
   
-  ###convert to Sal using equations from UNESCO 1983. Taken from James Douglass's Excel sheet
   
   var1<-cond/42.9 ##this is the conductivity ratio. 42.9 is the reference conductivity in mS/cm. If you measured conductivity in different units, you will need to change the reference conductivity to match.
   

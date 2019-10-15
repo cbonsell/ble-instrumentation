@@ -2,17 +2,29 @@
 ####made for BP TempSal workup fall 2017.R
 ####adapted for BLE LTER
 ####Christina Bonsell
-####last edit 11 Sept 2019
+####last edit Oct 2019
+
+
+
 source('scr/CondtoSal_miliS.R')
 
 print("SO error: T=0.1, Cond=1.5 mS/cm, RBR error: T=0.002, Cond=0.01 mS/cm")
 
+#' Identify invalid ("anom") data based on freezing line
+#' calculates the salinity error based on the innate loggger cond and temp error margins (Terror and Cerror)
+#' determines if dataset's error margins fall within an acceptable range
+#' data is "anomylous" if data +C+T error is below the freezing line 
+#' @param dat dataframe with columns for temperature and conductivity
+#' @param tempcol name of column for temperature, in quotes
+#' @param condcol name of column for conductivity, in quotes
+#' @param Terror precision for temperature
+#' @param Cerror precision for conductivity
+#' @example TSanom_workup(RBR, "Temperature", "Conductivity", .002,.01)
 TSanom_workup<-function(dat,tempcol,condcol, Terror, Cerror){
 
   dat$Sal<-Cond.to.Sal(dat[[condcol]], dat[[tempcol]])
   
-  #the next part calculates the salinity error based on the innate loggger cond and temp error margins (Terror and Cerror)
-  #this can be used in TS plots do determine if dataset's error margins fall within an acceptable range
+
   dat$posTerror<-dat[[tempcol]]+Terror
   dat$negTerror<-dat[[tempcol]]-Terror
   
@@ -34,8 +46,11 @@ TSanom_workup<-function(dat,tempcol,condcol, Terror, Cerror){
 }
 
 
-###Visulaize the outliers (black) in plot over time
 
+#' Visulaize the outliers (black) in plot over time
+#' @param dat dataframe that has gone through TSanom_workup
+#' @param tempcol name of column for temperature, in quotes
+#' @param name name of plot, usually site name
 outlierTS<-function(dat,tempcol,name){ 
   
   tks<-seq(dat$Date[1], dat$Date[nrow(dat)], by = "months")
@@ -55,8 +70,11 @@ outlierTS<-function(dat,tempcol,name){
   
 }
 
-########identify one off outliers
-
+#' Identify outliers via point and click on salinity over time plot
+#' @param dat dataframe with columns for date or datetime, salinity, and row (has to be called row)
+#' @param datename name of column for date, in quotes
+#' @param salname name of column for salinity, in quotes
+#' @param dfname plot title
 IDoutlier<-function(dat,datename, salname, dfname){
   my.col <- colorRampPalette(brewer.pal(11, "Spectral"))(diff(range(dat$row)))
   df<-as.data.frame(dat)
@@ -69,6 +87,12 @@ IDoutlier<-function(dat,datename, salname, dfname){
   badpts
 }
 
+
+#' Identify outliers via point and click on temp vs salinity plot
+#' @param dat dataframe with columns for date or temperature, salinity, and row (has to be called row)
+#' @param tempname name of column for temperature, in quotes
+#' @param salname name of column for salinity, in quotes
+#' @param dfname plot title
 IDoutlier2<-function(dat,tempname, salname, dfname){
   my.col <- colorRampPalette(brewer.pal(11, "Spectral"))(diff(range(dat$row)))
   df<-as.data.frame(dat)
