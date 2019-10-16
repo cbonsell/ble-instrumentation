@@ -1,0 +1,12 @@
+---
+title: "Landing Page"
+author: "Christina Bonsell"
+date: "October 16, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## A landing page
