@@ -13,11 +13,15 @@ library(oce)
 library(cowplot)
 ```
 
-#Looks like JALD2 got knocked out by ice 
-#JALD1+KALD1+KALD2 got stuck in the ice or there was basically no current in those lagoons
+#Looks like JALD2 got knocked out by ice?
+#JALD1+KALD1+KALD2: very consistant low winter current in those lagoons?
 
-```{r look_at_data, echo=FALSE, include=FALSE, message=FALSE, warning=FALSE}
+```{r look_at_data, echo=FALSE, message=FALSE, warning=FALSE}
 source('scr/TCMdata_import.R')
+
+#fill in daylight savings time issue (result from keeping format in Alaska time)
+TCM_Temp$DT[is.na(TCM_Temp$DT)]<-as.POSIXct("2019-03-10 02:00:00")
+TCM_Curr$DT[is.na(TCM_Curr$DT)]<-as.POSIXct("2019-03-10 02:00:00")
 
 ggplot(TCM_Temp, aes(DT, Temperature))+
   geom_line(aes(color=Station))+
@@ -35,7 +39,7 @@ ggplot(TCM_Curr, aes(DT, Vel_N))+
   theme_cowplot()
 ```
 
-```{r stickplot}
+```{r stickplot, echo=FALSE, message=FALSE, warning=FALSE}
 layout(matrix(c(1,2,3,4,5,6,7), 7), 30,c(10,10,10,10,10,10,10))
 plotSticks(TCM_Curr$DT[TCM_Curr$Station=="EELD1"], 0, 
            TCM_Curr$Vel_E[TCM_Curr$Station=="EELD1"], 
@@ -72,25 +76,25 @@ axis.POSIXct(1,at = seq(min(TCM_Curr$DT), max(TCM_Curr$DT), by = "1 months"), fo
 
 #Flag JALD2 and EELD1
 
-```{r flags}
+```{r flags, echo=FALSE, message=FALSE, warning=FALSE}
 
 TCM_Curr %>% filter(Station=="JALD2"&
-                    DT<as.POSIXct("2018-08-28 01:00:00", tz="GMT")) %>% 
+                    DT<as.POSIXct("2018-08-28 01:00:00", tz="US/Alaska")) %>% 
   ggplot(aes(DT, Speed_cm_s))+
   geom_line()+
   theme_cowplot()
 
 TCM_Curr %>% filter(Station=="EELD1"&
-                    DT>as.POSIXct("2019-06-28 01:00:00", tz="GMT")&
-                      DT<as.POSIXct("2019-07-05 01:00:00", tz="GMT")) %>% 
+                    DT>as.POSIXct("2019-06-28 01:00:00", tz="US/Alaska")&
+                      DT<as.POSIXct("2019-07-05 01:00:00", tz="US/Alaska")) %>% 
   ggplot(aes(DT, Speed_cm_s))+
-  geom_point(aes(color=flags))+
+  geom_point()+
   theme_cowplot()
 
 TCM_Curr<-TCM_Curr%>%
   mutate(flags=
-           case_when(Station=="JALD2"& DT>as.POSIXct("2018-08-27 01:00:00", tz="GMT")~"BAD",
-                    Station=="EELD1"& DT>as.POSIXct("2019-06-29 05:00:00", tz="GMT")&DT<as.POSIXct("2019-07-04 20:00:00", tz="GMT") ~"QM"))
+           case_when(Station=="JALD2"& DT>as.POSIXct("2018-08-27 01:00:00", tz="US/Alaska")~"BAD",
+                    Station=="EELD1"& DT>as.POSIXct("2019-06-29 05:00:00", tz="US/Alaska")&DT<as.POSIXct("2019-07-04 20:00:00", tz="US/Alaska") ~"QM"))
 
 
 ggplot(TCM_Curr, aes(DT, Speed_cm_s))+

@@ -2,6 +2,11 @@
 #Bonsell
 # Oct 2019
 
+#gets everything in YYYY-MM-DD HH:MM:SS time format with timezone set to Alaska
+
+
+locale(tz="US/Alaska")
+
 library(tidyverse)
 library(lubridate)
 
@@ -17,7 +22,8 @@ TCM_Temp <- filelist %>%
   map_df(read_csv, .id = "FileName")
 
 TCM_Temp<-TCM_Temp%>%mutate(Station=str_sub(FileName,21,25))%>%
-  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`)
+  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`) %>% 
+  mutate(DT=force_tz(DT, "US/Alaska"))
 
 ########################
 ###TCM Currents###
@@ -31,7 +37,8 @@ TCM_Curr <- filelist %>%
 
 TCM_Curr<-TCM_Curr%>%mutate(Station=str_sub(FileName,21,25))%>%
   select(Station, DT=`ISO 8601 Time`, Speed_cm_s=`Speed (cm/s)`, Heading= `Heading (degrees)`,
-         Vel_N=`Velocity-N (cm/s)`, Vel_E=`Velocity-E (cm/s)`)
+         Vel_N=`Velocity-N (cm/s)`, Vel_E=`Velocity-E (cm/s)`)%>% 
+  mutate(DT=force_tz(DT, "US/Alaska"))
 
 # Settings from Lowell software data conversion:
 # TCMs: 0 ballast, Salt water
