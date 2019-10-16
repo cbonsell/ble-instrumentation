@@ -31,7 +31,7 @@ TCM_Curr$DT[is.na(TCM_Curr$DT)]<-as.POSIXct("2019-03-10 02:00:00")
 
 Flag JALD2 and EELD1
 
-```{r flags, echo=FALSE, message=FALSE, warning=FALSE}
+```{r flags}
 TCM_Curr<-TCM_Curr%>%
   mutate(flags=
            case_when(Station=="JALD2"& DT>as.POSIXct("2018-08-27 01:00:00", tz="US/Alaska")~"BAD",
@@ -41,28 +41,32 @@ TCM_Curr<-TCM_Curr%>%
 
 ```
 Final plots
-```{r}
+```{r plot, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 ggplot(TCM_Curr, aes(DT, Speed_cm_s))+
   geom_point(aes(color=flags))+
   facet_wrap(~Station, scales="free")+
   theme_cowplot()
 
-ggplot(TCM_Curr, aes(DT, Vel_N))+
-  geom_line(color="blue")+
-  geom_line(aes(DT, Vel_E), color="black")+
+ggplot(TCM_Curr, aes(DT))+
+  geom_line(aes(y=Vel_N,color="Vel_N"))+
+  geom_line(aes(y=Vel_E,color="Vel_E"))+
   facet_wrap(~Station, scales="free")+
-  theme_cowplot()
+  theme_cowplot()+
+  scale_color_manual(breaks = c("Vel_N", "Vel_E"),values = c("Vel_N"="black", "Vel_E"="blue"))
+
 
 ggplot(TCM_Temp, aes(DT, Temperature))+
   geom_line(aes(color=Station))+
   facet_wrap(~Station, scales="free")+
   theme_cowplot()
 ```
+
 write table
+
 ```{r}
 TCM2018to2019 <- full_join(TCM_Temp,TCM_Curr,by=c("Station","DT")) %>% 
   select(-flags,flags) #this join will be conservative (final table will not include temps for which there aren't current measurements)
 
 write.csv(TCM2018to2019, "results/BLE LTER TCM2018to2019.csv")
 ```
-
+Final table: [BLE LTER TCM2018to2019.csv](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20TCM2018to2019.csv)
