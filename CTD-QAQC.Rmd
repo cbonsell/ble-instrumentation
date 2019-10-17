@@ -14,7 +14,11 @@ library(tidyverse)
 library(cowplot)
 ```
 
-# A cleaned-up version of [CTDworkup.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTDworkup.Rmd) that only spits out final dataset and plots
+# A cleaned-up version of [CTDworkup.Rmd](https://cbonsell.github.io/ble-instrumentation/CTDworkup) that only returns final dataset and plots.
+
+[R script for this document](https://github.com/cbonsell/ble-instrumentation/blob/master/CTD-QAQC.Rmd)
+
+[R script for workup document](https://github.com/cbonsell/ble-instrumentation/blob/master/CTDworkup.Rmd)
 
 Important info
 

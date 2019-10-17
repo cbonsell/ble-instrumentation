@@ -12,7 +12,11 @@ library(oce)
 library(cowplot)
 ```
 
-# A cleaned-up version of [TCMworkup.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/tCMworkup.Rmd) that only spits out final dataset and plots
+# A cleaned-up version of [TCMworkup.Rmd](https://cbonsell.github.io/ble-instrumentation/TCMworkup) that only spits out final dataset and plots
+
+[R script for this document](https://github.com/cbonsell/ble-instrumentation/blob/master/TCM-QAQC.Rmd)
+
+[R script for workup document](https://github.com/cbonsell/ble-instrumentation/blob/master/TCMworkup.Rmd)
 
 Important info
 
