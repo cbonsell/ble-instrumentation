@@ -111,12 +111,13 @@ RBR_final<-RBR_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
 SO_final<-SO_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
 ```
 
-# Finalize tables and display data
+# Finalize tables
 ```{r finalize, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 #Finalize and write csvs
 
 #RBR puts NA at date at daylight savings time, grrr
 RBR_final<-RBR_final[!is.na(RBR_final$Station),]
+RBR_final$DT<-force_tz(RBR_final$DT, tz="UTC")
 RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00", tz="UTC")
 
 # remove unneeded cols
@@ -125,6 +126,13 @@ RBR_final<-RBR_final%>%select(-anom, -flag)
 SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
                              Speed.of.sound=SoundVel_mpers, Instrument,flags,calibrated)
 
+
+
+```
+
+Display data
+
+```{r}
 #plots
 ggplot(RBR_final, aes(DT, Temperature))+
   geom_point(aes(color=flags), alpha=0.5)+
@@ -147,9 +155,9 @@ ggplot(RBR_final, aes(DT, Conductivity))+
 ggplot(RBR_final, aes(DT, Sea.pressure))+
   geom_point(aes(color=Station), alpha=0.5)+
   theme_cowplot()
-
 ```
 
+Write csvs
 ```{r derived-data}
 write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
 write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
