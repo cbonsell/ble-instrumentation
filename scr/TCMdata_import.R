@@ -22,8 +22,7 @@ TCM_Temp <- filelist %>%
   map_df(read_csv, .id = "FileName")
 
 TCM_Temp<-TCM_Temp%>%mutate(Station=str_sub(FileName,21,25))%>%
-  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`) %>% 
-  mutate(DT=force_tz(DT, "US/Alaska"))
+  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`) 
 
 ########################
 ###TCM Currents###
@@ -37,8 +36,7 @@ TCM_Curr <- filelist %>%
 
 TCM_Curr<-TCM_Curr%>%mutate(Station=str_sub(FileName,21,25))%>%
   select(Station, DT=`ISO 8601 Time`, Speed_cm_s=`Speed (cm/s)`, Heading= `Heading (degrees)`,
-         Vel_N=`Velocity-N (cm/s)`, Vel_E=`Velocity-E (cm/s)`)%>% 
-  mutate(DT=force_tz(DT, "US/Alaska"))
+         Vel_N=`Velocity-N (cm/s)`, Vel_E=`Velocity-E (cm/s)`)
 
 # Settings from Lowell software data conversion:
 # TCMs: 0 ballast, Salt water

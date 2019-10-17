@@ -24,20 +24,19 @@ Important info
 Read in data
 ```{r, message=FALSE}
 source('scr/TCMdata_import.R')
-#fill in daylight savings time issue (result from keeping format in Alaska time)
-TCM_Temp$DT[is.na(TCM_Temp$DT)]<-as.POSIXct("2019-03-10 02:00:00")
-TCM_Curr$DT[is.na(TCM_Curr$DT)]<-as.POSIXct("2019-03-10 02:00:00")
+
 ```
 
 Flag JALD2 and EELD1
 
 ```{r flags}
+#data is actually in US/Alaska time, but we want easy to work with code :)
+
+
 TCM_Curr<-TCM_Curr%>%
   mutate(flags=
-           case_when(Station=="JALD2"& DT>as.POSIXct("2018-08-27 01:00:00", tz="US/Alaska")~"BAD",
-                    Station=="EELD1"& DT>as.POSIXct("2019-06-29 05:00:00", tz="US/Alaska")&DT<as.POSIXct("2019-07-04 20:00:00", tz="US/Alaska") ~"QM"))
-
-
+           case_when(Station=="JALD2"& DT>as.POSIXct("2018-08-27 01:00:00", tz="UTC")~"BAD",
+                    Station=="EELD1"& DT>as.POSIXct("2019-06-29 05:00:00", tz="UTC")&DT<as.POSIXct("2019-07-04 20:00:00", tz="UTC") ~"QM"))
 
 ```
 Final plots

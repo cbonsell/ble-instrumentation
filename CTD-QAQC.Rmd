@@ -16,6 +16,12 @@ library(cowplot)
 
 # A cleaned-up version of [CTDworkup.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTDworkup.Rmd) that only spits out final dataset and plots
 
+Important info
+
+* EWLD1 and KALD1 (Star Oddi) were calibrated based on YSI sonde measurements, other stations looked good
+* EELD1 looks like it got buried. Data flagged as QM (questionable)
+* Data below freezing line flagged as INV (invalid)
+* Other suspicious data (big linear drops in cond/sal) flagged as QM
 
 
 Read in data for 
@@ -111,7 +117,7 @@ SO_final<-SO_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
 
 #RBR puts NA at date at daylight savings time, grrr
 RBR_final<-RBR_final[!is.na(RBR_final$Station),]
-RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00")
+RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00", tz="UTC")
 
 # remove unneeded cols
 RBR_final<-RBR_final%>%select(-anom, -flag)
@@ -149,4 +155,8 @@ write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
 write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
 ```
 
+Final tables: 
 
+[RBR](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20RBRCTD%202018to2019.csv)
+
+[StarOddi](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20StarOddiCST%202018to2019.csv)
