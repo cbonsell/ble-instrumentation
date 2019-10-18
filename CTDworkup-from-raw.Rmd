@@ -363,7 +363,7 @@ ggplot(RBR_final, aes(DT, Sea.pressure))+
 ```
 
 ```{r derived-data}
-write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
-write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
+write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv", row.names = F)
+write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv", row.names = F)
 ```
 

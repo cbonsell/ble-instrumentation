@@ -209,8 +209,8 @@ summary {
 library(lubridate)
 library(cowplot)</code></pre>
 <p>Read in data</p>
-<pre class="r"><code>RBR &lt;- read_csv(&quot;RBR_condensed_raw.csv&quot;) %&gt;% select(-X1)
-StarOddi &lt;- read_csv(&quot;StarOddi_condensed_raw.csv&quot;) %&gt;% select(-X1)
+<pre class="r"><code>RBR &lt;- read_csv(&quot;RBR_condensed_raw.csv&quot;)
+StarOddi &lt;- read_csv(&quot;StarOddi_condensed_raw.csv&quot;)
 
 YSI &lt;- read_csv(&quot;YSI_for_calibration.csv&quot;)</code></pre>
 <p>Calibrate EWLD1 and KALD1 data</p>

@@ -45,8 +45,8 @@ library(cowplot)
 Read in data
 ```{r ysi_data, message=FALSE, warning=FALSE}
 
-RBR <- read_csv("RBR_condensed_raw.csv") %>% select(-X1)
-StarOddi <- read_csv("StarOddi_condensed_raw.csv") %>% select(-X1)
+RBR <- read_csv("RBR_condensed_raw.csv")
+StarOddi <- read_csv("StarOddi_condensed_raw.csv")
 
 YSI <- read_csv("YSI_for_calibration.csv")
 ```
