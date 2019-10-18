@@ -1,0 +1,126 @@
+---
+title: "Create Condensed Datafiles"
+author: "Christina Bonsell"
+date: "October 18, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(readxl)
+```
+
+#Created condensed insitu logger datafiles for easier submission to repository
+
+
+
+#StarOddi load and munging
+
+Combine
+Insert Station name
+Formate datetime
+
+```{r}
+filelist =list.files(path = ".", recursive = TRUE,
+                     pattern = "\\.txt$", 
+                     full.names = TRUE)
+StarOddi <- filelist %>%
+  set_names(.) %>%
+  map_df(read_table2, col_names = FALSE, .id = "FileName",
+         col_types = cols(X4 = col_character(),
+                          X5 = col_character(), 
+                          X6 = col_character(), 
+                          X7 = col_character()))
+
+#change from european to SI notation
+StarOddi$X4<-as.numeric(sub(",", ".", StarOddi$X4, fixed = TRUE))
+StarOddi$X5<-as.numeric(sub(",", ".", StarOddi$X5, fixed = TRUE))
+StarOddi$X6<-as.numeric(sub(",", ".", StarOddi$X6, fixed = TRUE))
+StarOddi$X7<-as.numeric(sub(",", ".", StarOddi$X7, fixed = TRUE))
+
+StarOddi<-StarOddi%>%mutate(Station=str_sub(FileName,15,19))%>%
+                              select(Station, Date=X2, Time=X3, Temp_C=X4, Sal=X5, Cond_mspercm=X6, SoundVel_mpers=X7)
+
+StarOddi$DT<-as_datetime(paste(as.Date(StarOddi$Date, format="%d.%m.%Y"), StarOddi$Time))
+```
+
+
+#RBR load and munging
+
+Combine
+Insert Station name
+Format Datetime
+Get rid of unneeded columns
+
+```{r}
+filelist =list.files(path = ".", recursive = TRUE,
+                     pattern = "\\.xls$", 
+                     full.names = TRUE)
+RBR <- filelist %>%
+  set_names(.) %>%
+  map_df(read_excel, col_names = T, .id = "FileName")
+#Don't know what cols 11(temp?) and 12 are
+
+RBR<-RBR%>%mutate(Station=str_sub(FileName,29,33), DT=as.POSIXct(Timestamp, format="%d/%m/%Y %H:%M:%OS"))%>%
+  select(-Timestamp, -FileName, -...11, -...12)
+RBR<-RBR[,c(10,11,1:9)]# reorder columns
+
+```
+
+
+
+#TCM Temp load and munging
+
+Combine
+Insert Station name
+Format datetime
+
+```{r}
+filelist =list.files(path = ".", recursive = TRUE,
+                     pattern = "\\Temperature.csv$", 
+                     full.names = TRUE)
+TCM_Temp <- filelist %>%
+  set_names(.) %>%
+  map_df(read_csv, .id = "FileName")
+
+TCM_Temp<-TCM_Temp%>%mutate(Station=str_sub(FileName,21,25))%>%
+  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`) 
+```
+
+
+#TCM Current loading and munging
+
+Settings from Lowell software data conversion:
+
+TCMs: 0 ballast, Salt water
+
+Declination (WMM, 1 April 2019) set for TCMS:
+
+ * EEL and EWL: 13.86
+ 
+ * KAL and JAL:19.07
+ 
+ 
+```{r}
+filelist =list.files(path = ".", recursive = TRUE,
+                     pattern = "\\Current.csv$", 
+                     full.names = TRUE)
+TCM_Curr <- filelist %>%
+  set_names(.) %>%
+  map_df(read_csv, .id = "FileName")
+
+TCM_Curr<-TCM_Curr%>%mutate(Station=str_sub(FileName,21,25))%>%
+  select(Station, DT=`ISO 8601 Time`, Speed_cm_s=`Speed (cm/s)`, Heading= `Heading (degrees)`,
+         Vel_N=`Velocity-N (cm/s)`, Vel_E=`Velocity-E (cm/s)`)
+```
+
+#Write files
+```{r}
+write.csv(RBR, "RBR_condensed_raw.csv")
+write.csv(StarOddi, "StarOddi_condensed_raw.csv")
+write.csv(TCM_Temp, "TCMtemperature_condensed_raw.csv")
+write.csv(TCM_Curr, "TCMcurrent_condensed_raw.csv")
+```
+
