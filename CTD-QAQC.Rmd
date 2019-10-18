@@ -11,10 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r libs, message=FALSE}
 library(tidyverse)
+library(lubridate)
 library(cowplot)
 ```
 
-# A cleaned-up version of [CTDworkup.Rmd](https://cbonsell.github.io/ble-instrumentation/CTDworkup) that only returns final dataset and plots.
+# A cleaned-up version of [CTDworkup-from-raw.Rmd](https://cbonsell.github.io/ble-instrumentation/CTDworkup-from-raw) that only returns final dataset and plots.
 
 [R script for this document](https://github.com/cbonsell/ble-instrumentation/blob/master/CTD-QAQC.Rmd)
 
@@ -23,24 +24,19 @@ library(cowplot)
 Important info
 
 * EWLD1 and KALD1 (Star Oddi) were calibrated based on YSI sonde measurements, other stations looked good
-* EELD1 looks like it got buried. Data flagged as QM (questionable)
-* Data below freezing line flagged as INV (invalid)
-* Other suspicious data (big linear drops in cond/sal) flagged as QM
+    + KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
+* EELD1 looks like it got buried. Data flagged as QM (questionable) by trained human
+* Data below freezing line flagged as INV (invalid) by algorithm
+* Other suspicious data (big linear drops in cond/sal) flagged as QM by trained human
 
 
-Read in data for 
+Read in data
 ```{r ysi_data, message=FALSE, warning=FALSE}
-source('scr/CTDdata_import.R') #Star Oddi, RBR, and TCM data
 
+RBR <- read_csv("RBR_condensed_raw.csv") %>% select(-X1)
+StarOddi <- read_csv("StarOddi_condensed_raw.csv") %>% select(-X1)
 
-YSI<- read_csv("data/YSI 2018to2019.csv")%>%
-  filter(DepthCat=="depth",Parameter %in% c("Temp.C","Sal","Cond"),
-         !Station %in% c("SILD1","SILD2","STLD1","STLD2"))%>%
-  select(Station,Parameter,Value,Datetime)%>%
-  mutate(DT=round_date(Datetime, unit="hour"))%>%
-  spread(Parameter, Value)%>%
-  mutate(Conductivity=Cond/1000)%>%
-  select(Station,DT,Salinity=Sal,Temperature=Temp.C, Conductivity)
+YSI <- read_csv("YSI_for_calibration.csv")
 ```
 
 
@@ -128,7 +124,7 @@ RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00", tz="UTC")
 RBR_final<-RBR_final%>%select(-anom, -flag)
 
 SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
-                             Speed.of.sound=SoundVel_mpers, Instrument,flags,calibrated)
+                             Speed.of.sound=SoundVel_mpers, flags,calibrated)
 
 
 
