@@ -1,5 +1,5 @@
 ---
-title: "LTER Instrument Workup 2019"
+title: "LTER CTD Instrument Workup 2019"
 author: "Christina Bonsell"
 date: "Oct 4, 2019"
 output:
@@ -17,19 +17,20 @@ library(cowplot)
 library(knitr)
 ```
 
-## Temperature and Salinity Workup:
+## Temperature and Salinity Workup from raw data:
 
 1. Compare datalogger data to each other and to YSI sonde data
 2. Present some background summaries and visualizations comparing instruments
 3. Choose datasets best representative of station hydrography, default to RBR
-4. Flag "invalid" data based to frezzing line
+4. Flag "invalid" data via algorithm based on freezing line
 5. Calibrate EWLD1 and KALD1 (StarOddi) using YSI data
 6. Show some comparison plots b/n calibrated and uncalibrated data
-7. Add "Qustionable measurement" flags to questionable conductivity/salinity data
+7. Manually add "Qustionable measurement" flags to questionable conductivity/salinity data
 8. Write derived (calibrated, QA/QCd) dataset
 
 
 [CTD-QAQC.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTD-QAQC.Rmd) is a cleaned-up version that just spits out derived datasets and final plots
+
 
 ```{r ysi_data, echo=FALSE, include=FALSE, message=FALSE}
 source('scr/CTDdata_import.R') #Star Oddi, RBR, and TCM data
@@ -46,7 +47,9 @@ YSI<- read_csv("data/YSI 2018to2019.csv")%>%
 ```
 
 ## Compare instrument types (color points) to YSI data (black points)
+
 ###EWLD1 and KALD1 could use calibration
+
 ### in April in Jago (JAL), high amounts of stratification meant that YSI may not have hit correct depth and cond/sal reading may be off
 
 ```{r inst_vs_ysi, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
@@ -187,7 +190,8 @@ StarOddi<-bind_rows(StarOddi,calibrated)
 
 ```
 
-##T vs S to check for erroneous data via **freezing line***
+##T vs S to check for erroneous data via **freezing line**
+
 ```{r TvsS, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 
 xsc<-c(0,10,20,45)
@@ -233,9 +237,13 @@ ggplot(SO2, aes(DT,Sal))+
   theme(legend.position="bottom")+
   theme_cowplot()
 ```
+
 #Choose datasets to use in final table
+
 ##color=StarOddi, black=RBR
+
 ##use KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
+
 ```{r chose_datasets, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 
 
@@ -291,25 +299,29 @@ RBR_final<-RBR_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
 SO_final<-SO_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
 
 ggplot(RBR_final, aes(DT,Salinity))+
-     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
-     facet_wrap(~Station)+
-     theme(legend.position="bottom")
+  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")+
+  theme_cowplot()
 
 ggplot(SO_final, aes(DT,Sal))+
-     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
-     facet_wrap(~Station)+
-     theme(legend.position="bottom")
+  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")+
+  theme_cowplot()
 
 ggplot(RBR_final, aes(DT,Temperature))+
-     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
-     facet_wrap(~Station)+
-     theme(legend.position="bottom")
+  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")+
+  theme_cowplot()
 
 ggplot(SO_final, aes(DT,Temp_C))+
-     geom_point(size=1.1, alpha=0.5, aes(color=flags))+
-     facet_wrap(~Station)+
-     theme(legend.position="bottom")
-     
+  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+  facet_wrap(~Station)+
+  theme(legend.position="bottom")+
+  theme_cowplot()
+
 ```
 
 
@@ -330,18 +342,22 @@ SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Condu
 # plots
 ggplot(RBR_final, aes(DT, Temperature))+
   geom_point(aes(color=Station), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT, Temperature, color=Station), alpha=0.5)
+  geom_point(data=SO_final, aes(DT, Temperature, color=Station), alpha=0.5)+
+  theme_cowplot()
 
 ggplot(RBR_final, aes(DT,Salinity))+
   geom_point(aes(color=Station), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT,Salinity, color=Station), alpha=0.5)
+  geom_point(data=SO_final, aes(DT,Salinity, color=Station), alpha=0.5)+
+  theme_cowplot()
 
 ggplot(RBR_final, aes(DT, Conductivity))+
   geom_point(aes(color=Station), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT,Conductivity, color=Station), alpha=0.5)
+  geom_point(data=SO_final, aes(DT,Conductivity, color=Station), alpha=0.5)+
+  theme_cowplot()
 
 ggplot(RBR_final, aes(DT, Sea.pressure))+
-  geom_point(aes(color=Station), alpha=0.5)
+  geom_point(aes(color=Station), alpha=0.5)+
+  theme_cowplot()
 
 ```
 
