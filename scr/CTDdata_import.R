@@ -2,7 +2,6 @@
 ##Bonsell Sept 2019
 library(tidyverse)
 library(lubridate)
-library(cowplot)
 library(readxl)
 
 #StarOddi load and munging####
