@@ -7,9 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
-library(oce)
-library(cowplot)
+
 ```
 
 # A cleaned-up version of [TCMworkup-from-raw.Rmd](https://cbonsell.github.io/ble-instrumentation/TCMworkup-from-raw) that only returns final dataset and plots
@@ -27,6 +25,20 @@ Important info
     + EELD1 between 2019-06-29 05:00:00 and 2019-07-04 20:00:00 flagged as **QM** (questionable)
 
 * EWLD1 battery died June 15 2019
+
+
+Final table: [BLE LTER TCM2018to2019.csv](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20TCM2018to2019.csv)
+
+
+##Code and Plots
+
+Required packages:
+
+```{r libs, message=FALSE}
+library(tidyverse)
+library(oce)
+library(cowplot)
+```
 
 
 Read in data
@@ -79,4 +91,4 @@ TCM2018to2019 <- full_join(TCM_Temp,TCM_Curr,by=c("Station","DT")) %>%
 
 write.csv(TCM2018to2019, "BLE LTER TCM2018to2019.csv")
 ```
-Final table: [BLE LTER TCM2018to2019.csv](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20TCM2018to2019.csv)
+

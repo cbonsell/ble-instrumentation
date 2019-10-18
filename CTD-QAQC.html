@@ -185,9 +185,6 @@ summary {
 </div>
 
 
-<pre class="r"><code>library(tidyverse)
-library(lubridate)
-library(cowplot)</code></pre>
 <div id="a-cleaned-up-version-of-ctdworkup-from-raw.rmd-that-only-returns-final-dataset-and-plots." class="section level1">
 <h1>A cleaned-up version of <a href="https://cbonsell.github.io/ble-instrumentation/CTDworkup-from-raw">CTDworkup-from-raw.Rmd</a> that only returns final dataset and plots.</h1>
 <p><a href="https://github.com/cbonsell/ble-instrumentation/blob/master/CTD-QAQC.Rmd">R script for this document</a></p>
@@ -202,6 +199,15 @@ library(cowplot)</code></pre>
 <li>Data below freezing line flagged as INV (invalid) by algorithm</li>
 <li>Other suspicious data (big linear drops in cond/sal) flagged as QM by trained human</li>
 </ul>
+<p>Final tables:</p>
+<p><a href="https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20RBRCTD%202018to2019.csv">RBR</a></p>
+<p><a href="https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20StarOddiCST%202018to2019.csv">StarOddi</a></p>
+<div id="code-and-plots" class="section level2">
+<h2>Code and plots:</h2>
+<p>Required packages:</p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)
+library(cowplot)</code></pre>
 <p>Read in data</p>
 <pre class="r"><code>RBR &lt;- read_csv(&quot;RBR_condensed_raw.csv&quot;) %&gt;% select(-X1)
 StarOddi &lt;- read_csv(&quot;StarOddi_condensed_raw.csv&quot;) %&gt;% select(-X1)
@@ -262,6 +268,7 @@ SO2&lt;-TSanom_workup(StarOddi, &quot;Temp_C&quot;, &quot;Cond_mspercm&quot;, .1
          calibrated=case_when(Station==&quot;KALD1&quot;|Station==&quot;EWLD1&quot; ~ TRUE))</code></pre>
 <p>Created column that denotes data flags</p>
 </div>
+</div>
 <div id="finalize-tables" class="section level1">
 <h1>Finalize tables</h1>
 <pre class="r"><code>#Finalize and write csvs
@@ -303,9 +310,6 @@ ggplot(RBR_final, aes(DT, Temperature))+
 <p>Write csvs</p>
 <pre class="r"><code>write.csv(RBR_final, &quot;results/BLE LTER RBRCTD 2018to2019.csv&quot;)
 write.csv(SO_final, &quot;results/BLE LTER StarOddiCST 2018to2019.csv&quot;)</code></pre>
-<p>Final tables:</p>
-<p><a href="https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20RBRCTD%202018to2019.csv">RBR</a></p>
-<p><a href="https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20StarOddiCST%202018to2019.csv">StarOddi</a></p>
 </div>
 
 

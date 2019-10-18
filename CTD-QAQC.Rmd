@@ -9,11 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r libs, message=FALSE}
-library(tidyverse)
-library(lubridate)
-library(cowplot)
-```
 
 # A cleaned-up version of [CTDworkup-from-raw.Rmd](https://cbonsell.github.io/ble-instrumentation/CTDworkup-from-raw) that only returns final dataset and plots.
 
@@ -28,6 +23,23 @@ Important info
 * EELD1 looks like it got buried. Data flagged as QM (questionable) by trained human
 * Data below freezing line flagged as INV (invalid) by algorithm
 * Other suspicious data (big linear drops in cond/sal) flagged as QM by trained human
+
+Final tables: 
+
+[RBR](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20RBRCTD%202018to2019.csv)
+
+[StarOddi](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20StarOddiCST%202018to2019.csv)
+
+
+## Code and plots:
+
+Required packages:
+
+```{r libs, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(cowplot)
+```
 
 
 Read in data
@@ -163,8 +175,4 @@ write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
 write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
 ```
 
-Final tables: 
 
-[RBR](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20RBRCTD%202018to2019.csv)
-
-[StarOddi](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20StarOddiCST%202018to2019.csv)

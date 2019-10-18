@@ -201,6 +201,13 @@ summary {
 </ul></li>
 <li>EWLD1 battery died June 15 2019</li>
 </ul>
+<p>Final table: <a href="https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20TCM2018to2019.csv">BLE LTER TCM2018to2019.csv</a></p>
+<div id="code-and-plots" class="section level2">
+<h2>Code and Plots</h2>
+<p>Required packages:</p>
+<pre class="r"><code>library(tidyverse)
+library(oce)
+library(cowplot)</code></pre>
 <p>Read in data</p>
 <pre class="r"><code>TCM_Curr &lt;- read_csv(&quot;TCMcurrent_condensed_raw.csv&quot;) %&gt;% select(-X1)
 TCM_Temp &lt;- read_csv(&quot;TCMtemperature_condensed_raw.csv&quot;) %&gt;% select(-X1)</code></pre>
@@ -234,7 +241,7 @@ TCM_Curr&lt;-TCM_Curr%&gt;%
   select(-flags,flags) #this join will be conservative (final table will not include temps for which there aren't current measurements)
 
 write.csv(TCM2018to2019, &quot;BLE LTER TCM2018to2019.csv&quot;)</code></pre>
-<p>Final table: <a href="https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20TCM2018to2019.csv">BLE LTER TCM2018to2019.csv</a></p>
+</div>
 </div>
 
 
