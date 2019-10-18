@@ -32,7 +32,10 @@ JALD2<-as.data.frame(x[3])
 #looks ok
 KALD2<-as.data.frame(x[4])
 
-RBR_flagged<-bind_rows(EWLD2,JALD2,KALD2)[,c(1:12,22,24)]
+RBR_flagged<-bind_rows(EWLD2,JALD2,KALD2) %>%
+  select(Station, DT, Conductivity, Temperature, Pressure, 
+         Sea.pressure, Depth, Salinity, Speed.of.sound, 
+         Specific.conductivity, Density.anomaly, anom, flag)
 
 ############
 ###StarOddi####
