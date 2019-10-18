@@ -12,11 +12,11 @@ library(oce)
 library(cowplot)
 ```
 
-# A cleaned-up version of [TCMworkup.Rmd](https://cbonsell.github.io/ble-instrumentation/TCMworkup) that only spits out final dataset and plots
+# A cleaned-up version of [TCMworkup-from-raw.Rmd](https://cbonsell.github.io/ble-instrumentation/TCMworkup-from-raw) that only returns final dataset and plots
 
 [R script for this document](https://github.com/cbonsell/ble-instrumentation/blob/master/TCM-QAQC.Rmd)
 
-[R script for workup document](https://github.com/cbonsell/ble-instrumentation/blob/master/TCMworkup.Rmd)
+[R script for workup document](https://github.com/cbonsell/ble-instrumentation/blob/master/TCMworkup-from-raw.Rmd)
 
 Important info
 
@@ -26,10 +26,12 @@ Important info
 
 
 Read in data
-```{r, message=FALSE}
-source('scr/TCMdata_import.R')
 
+```{r, message=FALSE, warning=FALSE}
+TCM_Curr <- read_csv("TCMcurrent_condensed_raw.csv") %>% select(-X1)
+TCM_Temp <- read_csv("TCMtemperature_condensed_raw.csv") %>% select(-X1)
 ```
+
 
 Flag JALD2 and EELD1
 
@@ -43,7 +45,9 @@ TCM_Curr<-TCM_Curr%>%
                     Station=="EELD1"& DT>as.POSIXct("2019-06-29 05:00:00", tz="UTC")&DT<as.POSIXct("2019-07-04 20:00:00", tz="UTC") ~"QM"))
 
 ```
+
 Final plots
+
 ```{r plot, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 ggplot(TCM_Curr, aes(DT, Speed_cm_s))+
   geom_point(aes(color=flags))+
@@ -60,7 +64,6 @@ ggplot(TCM_Curr, aes(DT))+
 
 ggplot(TCM_Temp, aes(DT, Temperature))+
   geom_line(aes(color=Station))+
-  facet_wrap(~Station, scales="free")+
   theme_cowplot()
 ```
 
@@ -70,6 +73,6 @@ write table
 TCM2018to2019 <- full_join(TCM_Temp,TCM_Curr,by=c("Station","DT")) %>% 
   select(-flags,flags) #this join will be conservative (final table will not include temps for which there aren't current measurements)
 
-write.csv(TCM2018to2019, "results/BLE LTER TCM2018to2019.csv")
+write.csv(TCM2018to2019, "BLE LTER TCM2018to2019.csv")
 ```
 Final table: [BLE LTER TCM2018to2019.csv](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20TCM2018to2019.csv)
