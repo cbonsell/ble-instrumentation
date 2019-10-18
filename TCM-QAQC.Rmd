@@ -44,8 +44,8 @@ library(cowplot)
 Read in data
 
 ```{r, message=FALSE, warning=FALSE}
-TCM_Curr <- read_csv("TCMcurrent_condensed_raw.csv") %>% select(-X1)
-TCM_Temp <- read_csv("TCMtemperature_condensed_raw.csv") %>% select(-X1)
+TCM_Curr <- read_csv("TCMcurrent_condensed_raw.csv") 
+TCM_Temp <- read_csv("TCMtemperature_condensed_raw.csv")
 ```
 
 

@@ -209,8 +209,8 @@ summary {
 library(oce)
 library(cowplot)</code></pre>
 <p>Read in data</p>
-<pre class="r"><code>TCM_Curr &lt;- read_csv(&quot;TCMcurrent_condensed_raw.csv&quot;) %&gt;% select(-X1)
-TCM_Temp &lt;- read_csv(&quot;TCMtemperature_condensed_raw.csv&quot;) %&gt;% select(-X1)</code></pre>
+<pre class="r"><code>TCM_Curr &lt;- read_csv(&quot;TCMcurrent_condensed_raw.csv&quot;) 
+TCM_Temp &lt;- read_csv(&quot;TCMtemperature_condensed_raw.csv&quot;)</code></pre>
 <p>Flag JALD2 and EELD1</p>
 <pre class="r"><code>#data is actually in US/Alaska time, but we want easy to work with code :)
 
