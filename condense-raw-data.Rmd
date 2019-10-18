@@ -118,9 +118,9 @@ TCM_Curr<-TCM_Curr%>%mutate(Station=str_sub(FileName,21,25))%>%
 
 #Write files
 ```{r}
-write.csv(RBR, "RBR_condensed_raw.csv")
-write.csv(StarOddi, "StarOddi_condensed_raw.csv")
-write.csv(TCM_Temp, "TCMtemperature_condensed_raw.csv")
-write.csv(TCM_Curr, "TCMcurrent_condensed_raw.csv")
+write.csv(RBR, "RBR_condensed_raw.csv", row.names = F)
+write.csv(StarOddi, "StarOddi_condensed_raw.csv", row.names = F)
+write.csv(TCM_Temp, "TCMtemperature_condensed_raw.csv", row.names = F)
+write.csv(TCM_Curr, "TCMcurrent_condensed_raw.csv", row.names = F)
 ```
 
