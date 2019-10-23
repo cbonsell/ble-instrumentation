@@ -29,14 +29,25 @@ library(knitr)
 8. Write derived (calibrated, QA/QCd) dataset
 
 
-[CTD-QAQC.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTD-QAQC.Rmd) is a cleaned-up version that just spits out derived datasets and final plots
+[CTD-QAQC.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTD-QAQC.Rmd) is a cleaned-up version that just returns derived datasets and final plots
 
 
-```{r ysi_data, echo=FALSE, include=FALSE, message=FALSE}
+##Import CTD data
+
+First few rows:
+```{r CTD_data, echo=FALSE, message=FALSE, warning=FALSE}
 source('scr/CTDdata_import.R') #Star Oddi, RBR, and TCM data
+head(RBR)
+head(StarOddi)
+head(TCM_Temp)
+```
 
 
-YSI<- read_csv("data/YSI 2018to2019.csv")%>%
+##Import YSI data
+
+First few rows:
+```{r ysi_data, echo=FALSE,  message=FALSE}
+YSI<- read_csv("data/YSI 2018to2019.csv", col_types = cols(Datetime = col_datetime(format = "%m/%d/%Y %H:%M"))) %>%
   filter(DepthCat=="depth",Parameter %in% c("Temp.C","Sal","Cond"),
          !Station %in% c("SILD1","SILD2","STLD1","STLD2"))%>%
   select(Station,Parameter,Value,Datetime)%>%
@@ -44,6 +55,8 @@ YSI<- read_csv("data/YSI 2018to2019.csv")%>%
   spread(Parameter, Value)%>%
   mutate(Conductivity=Cond/1000)%>%
   select(Station,DT,Salinity=Sal,Temperature=Temp.C, Conductivity)
+
+head(YSI)
 ```
 
 ## Compare instrument types (color points) to YSI data (black points)
