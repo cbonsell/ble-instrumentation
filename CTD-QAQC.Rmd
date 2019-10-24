@@ -20,7 +20,7 @@ Important info
 
 * EWLD1 and KALD1 (Star Oddi) were calibrated based on YSI sonde measurements, other stations looked good
     + KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
-* EELD1 looks like it got buried. Data flagged as QM (questionable) by trained human
+* EELD1 got buried. Data flagged as QM (questionable) by trained human. Temperature data looks ok, but use with caution. 
 * Data below freezing line flagged as INV (invalid) by algorithm
 * Other suspicious data (big linear drops in cond/sal) flagged as QM by trained human
 
@@ -48,7 +48,7 @@ Read in data
 RBR <- read_csv("RBR_condensed_raw.csv")
 StarOddi <- read_csv("StarOddi_condensed_raw.csv")
 
-YSI <- read_csv("YSI_for_calibration.csv")
+YSI <- read_csv("YSI_for_calibration.csv", col_types = cols(DT = col_datetime(format = "%m/%d/%Y %H:%M")))
 ```
 
 
@@ -63,6 +63,7 @@ EWLD10<-StarOddi%>%filter(Station=="EWLD1")%>%
   left_join(YSI, by=c("Station","DT"))%>%
   mutate(row=1:which(DT==max(DT)))%>%
   rename(fixedCond=Conductivity, fixedTemp=Temperature)
+
 dates<-which(!is.na(EWLD10$fixedCond))#identify where YSI measurements took place, ignore the June ones bc we were off Station
 EWLD10$fixedCond[1]<-EWLD10$Cond_mspercm[1]#YSI reading in Aug 2018 doesn't make sense
 EWLD10<-EWLD10[c(min(dates):max(dates)),]
@@ -117,10 +118,49 @@ SO3<-SO2%>%filter(Station !="KALD1"&Station!="KALD1_calibratedCond"&
 
 Created column that denotes data flags
 ```{r flag_data,  echo=FALSE, warning=FALSE, message=FALSE}
-source('scr/data_flag.R')# script developed in data workup to ID questionable data
 
-RBR_final<-RBR_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
-SO_final<-SO_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
+x<-RBR2%>%mutate(flag=F)%>%group_split(Station)
+
+EWLD2<-as.data.frame(x[2])
+EWLD2$flag[c(2901,4935:5108,5793:5962,7179,8217:8244)]<-T
+JALD2<-as.data.frame(x[3])
+KALD2<-as.data.frame(x[4])
+
+RBR_flagged<-bind_rows(EWLD2,JALD2,KALD2) %>%
+  select(Station, DT, Conductivity, Temperature, Pressure, 
+         Sea.pressure, Depth, Salinity, Speed.of.sound, 
+         Specific.conductivity, Density.anomaly, anom, flag)
+
+
+x<-SO3%>%mutate(flag=F)%>%group_split(Station)
+
+EELD1<-as.data.frame(x[1])
+EELD1$flag[c(482:nrow(EELD1))]<-T
+
+EELD2<-as.data.frame(x[2])
+EELD2$flag[c(1:15,7127:7519)]<-T
+
+EWLD1<-as.data.frame(x[3])
+EWLD1$flag[7524]<-T
+
+JALD1<-as.data.frame(x[5])
+JALD1$flag[c(2984,3387,7676:7891)]<-T
+
+KALD1<-as.data.frame(x[7])
+KALD1$flag[c(8:194,5293,7641:8333)]<-T
+
+
+
+SO_flagged<-bind_rows(EELD1,EELD2,EWLD1,JALD1,KALD1)%>%
+  select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
+         Speed.of.sound=SoundVel_mpers, anom,flag,calibrated)
+
+```
+
+```{r flagged_table, echo=FALSE, warning=FALSE, message=FALSE}
+RBR_final<-RBR_flagged%>%mutate(flags_CondSal=case_when(flag==T~"QM", anom==T~"INV"))
+SO_final<-SO_flagged%>%mutate(flags_CondSal=case_when(flag==T~"QM", anom==T~"INV"), 
+                                flags_Temperature=case_when(flag==T & Station=="EELD1" ~ "QM"))
 ```
 
 # Finalize tables
@@ -135,10 +175,7 @@ RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00", tz="UTC")
 # remove unneeded cols
 RBR_final<-RBR_final%>%select(-anom, -flag)
 
-SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
-                             Speed.of.sound=SoundVel_mpers, flags,calibrated)
-
-
+SO_final<-SO_final%>%select(-anom, -flag)
 
 ```
 
@@ -147,20 +184,20 @@ Display data
 ```{r}
 #plots
 ggplot(RBR_final, aes(DT, Temperature))+
-  geom_point(aes(color=flags), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT, Temperature, color=flags), alpha=0.5)+
+  geom_point(alpha=0.5)+
+  geom_point(data=SO_final, aes(DT, Temperature, color=SO_final$flags_Tempurature), alpha=0.5)+
   facet_wrap(~Station)+
   theme_cowplot()
 
 ggplot(RBR_final, aes(DT,Salinity))+
-  geom_point(aes(color=flags), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT,Salinity, color=flags), alpha=0.5)+
+  geom_point(aes(color=flags_CondSal), alpha=0.5)+
+  geom_point(data=SO_final, aes(DT,Salinity, color=flags_CondSal), alpha=0.5)+
   facet_wrap(~Station)+
   theme_cowplot()
 
 ggplot(RBR_final, aes(DT, Conductivity))+
-  geom_point(aes(color=flags), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT,Conductivity, color=flags), alpha=0.5)+
+  geom_point(aes(color=flags_CondSal), alpha=0.5)+
+  geom_point(data=SO_final, aes(DT,Conductivity, color=flags_CondSal), alpha=0.5)+
   facet_wrap(~Station)+
   theme_cowplot()
 

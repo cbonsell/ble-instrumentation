@@ -25,7 +25,7 @@ library(knitr)
 4. Flag "invalid" data via algorithm based on freezing line
 5. Calibrate EWLD1 and KALD1 (StarOddi) using YSI data
 6. Show some comparison plots b/n calibrated and uncalibrated data
-7. Manually add "Qustionable measurement" flags to questionable conductivity/salinity data
+7. Manually add "Qustionable measurement" flags to questionable conductivity/salinity data and EELD1temerature data form when it was in mud
 8. Write derived (calibrated, QA/QCd) dataset
 
 
@@ -302,44 +302,40 @@ SO3<-SO2%>%filter(Station !="KALD1"&Station!="KALD1_calibratedCond"&
 
 #Next step = Flagging data
 ##Values below freezing line (with error) are flagged "INV" for Invalid
-##Values that are outliers, or appear to be instrument malfunction (as determined by a trained human) are flagged "QM" for Questionable Measurement
+##Values that are outliers, or appear to be instrument malfunction (as determined by a trained human), or are from when instrument was in mud (EELD1 RBR pulled up coated in mud, attached to negatively buoyant SeaFET) are flagged "QM" for Questionable Measurement
 
 
 ```{r flag_data,  echo=FALSE, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 source('scr/data_flag.R')
 
-RBR_final<-RBR_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
-SO_final<-SO_flagged%>%mutate(flags=case_when(flag==T~"QM", anom==T~"INV"))
+RBR_final<-RBR_flagged%>%mutate(flags_CondSal=case_when(flag==T~"QM", anom==T~"INV"))
+SO_final<-SO_flagged%>%mutate(flags_CondSal=case_when(flag==T~"QM", anom==T~"INV"), 
+                                flags_Temperature=case_when(flag==T & Station=="EELD1" ~ "QM"))
 
 ggplot(RBR_final, aes(DT,Salinity))+
-  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+  geom_point(size=1.1, alpha=0.5, aes(color=flags_CondSal))+
   facet_wrap(~Station)+
   theme(legend.position="bottom")+
   theme_cowplot()
 
 ggplot(SO_final, aes(DT,Sal))+
-  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
-  facet_wrap(~Station)+
-  theme(legend.position="bottom")+
-  theme_cowplot()
-
-ggplot(RBR_final, aes(DT,Temperature))+
-  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+  geom_point(size=1.1, alpha=0.5, aes(color=flags_CondSal))+
   facet_wrap(~Station)+
   theme(legend.position="bottom")+
   theme_cowplot()
 
 ggplot(SO_final, aes(DT,Temp_C))+
-  geom_point(size=1.1, alpha=0.5, aes(color=flags))+
+  geom_point(size=1.1, alpha=0.5, aes(color=flags_Temperature))+
   facet_wrap(~Station)+
   theme(legend.position="bottom")+
   theme_cowplot()
+
 
 ```
 
 
 # Finalize tables and display data
-```{r finalize, echo=FALSE, include=FALSE, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+```{r finalize, echo=FALSE, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 #Finalize and write csvs
 
 #RBR puts NA at date at daylight savings time, grrr
@@ -351,7 +347,7 @@ RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00", tz="UTC")
 RBR_final<-RBR_final%>%select(-anom, -flag)
 
 SO_final<-SO_final%>%select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
-                             Speed.of.sound=SoundVel_mpers, Instrument,flags,calibrated)
+                             Speed.of.sound=SoundVel_mpers, Instrument,flags_CondSal,flags_Temperature,calibrated)
 
 # plots
 ggplot(RBR_final, aes(DT, Temperature))+
