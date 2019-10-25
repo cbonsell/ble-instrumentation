@@ -150,7 +150,6 @@ KALD1<-as.data.frame(x[7])
 KALD1$flag[c(8:194,5293,7641:8333)]<-T
 
 
-
 SO_flagged<-bind_rows(EELD1,EELD2,EWLD1,JALD1,KALD1)%>%
   select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
          Speed.of.sound=SoundVel_mpers, anom,flag,calibrated)

@@ -37,9 +37,9 @@ library(knitr)
 First few rows:
 ```{r CTD_data, echo=FALSE, message=FALSE, warning=FALSE}
 source('scr/CTDdata_import.R') #Star Oddi, RBR, and TCM data
-head(RBR)
-head(StarOddi)
-head(TCM_Temp)
+datatable(head(RBR), caption="RBR")
+datatable(head(StarOddi), caption="StarOddi")
+datatable(head(TCM_Temp), caption="Tilt Current meter")
 ```
 
 
@@ -56,7 +56,7 @@ YSI<- read_csv("data/YSI 2018to2019.csv", col_types = cols(Datetime = col_dateti
   mutate(Conductivity=Cond/1000)%>%
   select(Station,DT,Salinity=Sal,Temperature=Temp.C, Conductivity)
 
-head(YSI)
+datatable(head(RBR), caption="YSI")
 ```
 
 ## Compare instrument types (color points) to YSI data (black points)
@@ -257,7 +257,7 @@ ggplot(SO2, aes(DT,Sal))+
 
 ##use KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
 
-```{r chose_datasets, echo=FALSE, message=FALSE, warning=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
+```{r chose_datasets, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=6, fig.fullwidth=TRUE}
 
 
 SO2%>%filter(Station %in% c("KALD1","KALD1_calibrated","KALD1_calibratedCond","KALD2"))%>%
@@ -265,28 +265,28 @@ SO2%>%filter(Station %in% c("KALD1","KALD1_calibrated","KALD1_calibratedCond","K
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="KALD2",],aes(DT,Salinity), alpha=0.6)+
   theme_cowplot()+
-  theme(legend.position="bottom")
+  theme(legend.position="top")
 
 SO2%>%filter(Station %in% c("KALD1","KALD1_calibrated","KALD1_calibratedCond","KALD2"))%>%
   ggplot(aes(DT,Temp_C))+
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="KALD2",],aes(DT,Temperature), alpha=0.6)+
   theme_cowplot()+
-  theme(legend.position="bottom")
+  theme(legend.position="top")
 
 SO2%>%filter(Station %in% c("EWLD1","EWLD1_calibrated","EWLD1_calibratedCond","EWLD2"))%>%
   ggplot(aes(DT,Sal))+
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="EWLD2",],aes(DT,Salinity), alpha=0.6)+
   theme_cowplot()+
-  theme(legend.position="bottom")
+  theme(legend.position="top")
 
 SO2%>%filter(Station %in% c("EWLD1","EWLD1_calibrated","EWLD1_calibratedCond","EWLD2"))%>%
   ggplot(aes(DT,Temp_C))+
   geom_point(size=1.1, alpha=0.5, aes(color=Station))+
   geom_point(data=RBR2[RBR2$Station=="EWLD2",],aes(DT,Temperature), alpha=0.6)+
   theme_cowplot()+
-  theme(legend.position="bottom")
+  theme(legend.position="top")
 
 
 
