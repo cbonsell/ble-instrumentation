@@ -28,6 +28,8 @@ library(knitr)
 7. Manually add "Qustionable measurement" flags to questionable conductivity/salinity data and EELD1temerature data form when it was in mud
 8. Write derived (calibrated, QA/QCd) dataset
 
+[Code for this document](https://github.com/cbonsell/ble-instrumentation/blob/master/CTDworkup-from-raw.Rmd)
+
 
 [CTD-QAQC.Rmd](https://github.com/cbonsell/ble-instumentation/blob/master/CTD-QAQC.Rmd) is a cleaned-up version that just returns derived datasets and final plots
 
