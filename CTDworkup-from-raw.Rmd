@@ -58,7 +58,7 @@ YSI<- read_csv("data/YSI 2018to2019.csv", col_types = cols(Datetime = col_dateti
   mutate(Conductivity=Cond/1000)%>%
   select(Station,DT,Salinity=Sal,Temperature=Temp.C, Conductivity)
 
-datatable(head(RBR), caption="YSI")
+datatable(head(YSI), caption="YSI")
 ```
 
 ## Compare instrument types (color points) to YSI data (black points)
