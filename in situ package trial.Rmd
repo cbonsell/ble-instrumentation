@@ -1,0 +1,141 @@
+---
+title: "in situ package trial"
+author: "Christina Bonsell"
+date: "November 12, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(scales)
+library(viridisLite)
+library(DT)
+library(cowplot)
+library(knitr)
+library(devtools)
+#devtools::install_github("atn38/insitu", force=TRUE)
+#library("insitu", lib.loc="~/R/win-library/3.6")
+```
+
+
+##Import StarOddi data
+```{r}
+SOfilelist <- list.files(path = ".", recursive = TRUE,
+                     pattern = "\\.txt$", 
+                     full.names = TRUE)
+StarOddi<-import_data(SOfilelist, "CTD", "SO")
+str(StarOddi) 
+
+
+RBRfilelist <- list.files(path = ".", recursive = TRUE,
+                     pattern = "\\.xls$", 
+                     full.names = TRUE)
+RBR<-import_data(RBRfilelist, "CTD", "RBR")
+str(RBR) 
+
+TCMfilelist_t <- list.files(path = ".", recursive = TRUE,
+                     pattern = "\\Temperature.csv$", 
+                     full.names = TRUE)
+
+TCMtemp<-import_data(TCMfilelist_t, "TCM", param_type = "temp")
+str(TCMtemp) 
+
+TCMfilelist_c <- list.files(path = ".", recursive = TRUE,
+                     pattern = "\\Current.csv$", 
+                     full.names = TRUE)
+
+TCMcurr<-import_data(TCMfilelist_c, "TCM", param_type = "current")
+str(TCMcurr) 
+```
+##plot
+
+```{r}
+
+KALD1 <- StarOddi %>% filter(station=="KALD1")
+plot_tempsal(KALD1, "temperature", "salinity", "date_time", plottitle="KALD1")
+```
+
+
+
+##check calculate_salinity
+```{r}
+StarOddi <- StarOddi %>% mutate(newSal = calculate_salinity(conductivity, temperature))
+head(StarOddi)
+```
+
+
+##Import YSI data
+
+```{r ysi_data, echo=FALSE,  message=FALSE}
+YSI<- read_csv("data/YSI 2018to2019.csv", col_types = cols(Datetime = col_datetime(format = "%m/%d/%Y %H:%M"))) %>%
+  filter(DepthCat=="depth",Parameter %in% c("Temp.C","Sal","Cond"),
+         !Station %in% c("SILD1","SILD2","STLD1","STLD2"))%>%
+  select(Station,Parameter,Value,Datetime)%>%
+  mutate(DT=round_date(Datetime, unit="hour"))%>%
+  spread(Parameter, Value)%>%
+  mutate(Conductivity=Cond/1000)%>%
+  select(station=Station,DT,salinity=Sal,temperature=Temp.C, conductivity=Conductivity)
+
+head(YSI)
+```
+
+
+#Calibrate EWLD1
+
+```{r}
+# choose the calibration points from the YSI data
+good_ysi <- YSI %>% 
+  mutate(Date=as.Date(DT)) %>% 
+  filter(Date!="2019-06-23"&
+           Date!="2019-06-24"&
+           Date!="2019-08-11")
+
+EWLD1 <- StarOddi %>% filter(station=="EWLD1")
+
+
+EWLD1cal <- calibrate_data(EWLD1, good_ysi, cal_by = "temperature", raw="temperature")
+
+ggplot(EWLD1cal, aes(date_time, temperature))+
+  geom_point()+
+  geom_point(aes(date_time, temperature_calibrated), color= "blue")
+
+EWLD1cal <- calibrate_data(EWLD1cal, good_ysi, cal_by = "conductivity", raw="conductivity")
+
+EWLD1cal %>% filter(!is.na(temperature_ysi))
+```
+
+#create flags
+
+```{r}
+
+#default should be valid/invalid, so col type is not logical
+
+#doesn't work
+KALD1flag <- flag_salinity(KALD1, Terror=.1, Cerror = 2, flag_scheme = c("val","inv"))#should have defaults for T and C error
+
+
+
+#works
+KALD1flag <- flag_salinity(KALD1, Terror=.1, Cerror = 2)
+
+KALD1flag[which(KALD1flag$anomalous==TRUE),]
+
+
+ggplot(KALD1flag, aes(date_time, salinity))+
+  geom_point(aes(color=anomalous))
+```
+
+#create manual flags
+
+```{r}
+x <- id_outlier(KALD1flag)
+
+KALD1flag$anomalous[x] <-"weird" 
+
+ggplot(KALD1flag, aes(date_time, salinity))+
+  geom_point(aes(color=anomalous))
+```
+
