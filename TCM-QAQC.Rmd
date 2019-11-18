@@ -10,11 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-# A cleaned-up version of [TCMworkup-from-raw.Rmd](https://cbonsell.github.io/ble-instrumentation/TCMworkup-from-raw) that only returns final dataset and plots
-
-[R script for this document](https://github.com/cbonsell/ble-instrumentation/blob/master/TCM-QAQC.Rmd)
-
-[R script for workup document](https://github.com/cbonsell/ble-instrumentation/blob/master/TCMworkup-from-raw.Rmd)
 
 Important info
 
@@ -27,7 +22,16 @@ Important info
 * EWLD1 battery died June 15 2019
 
 
-Final table: [BLE LTER TCM2018to2019.csv](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20TCM2018to2019.csv)
+Settings from Lowell software data conversion:
+
+TCMs: 0 ballast, Salt water
+
+Declination (WMM, 1 April 2019) set for TCMS:
+
+ * EEL and EWL: 13.86
+ 
+ * KAL and JAL:19.07
+
 
 
 ##Code and Plots
@@ -36,7 +40,6 @@ Required packages:
 
 ```{r libs, message=FALSE}
 library(tidyverse)
-library(oce)
 library(cowplot)
 ```
 
@@ -57,36 +60,37 @@ Flag JALD2 and EELD1
 
 TCM_Curr<-TCM_Curr%>%
   mutate(flags=
-           case_when(Station=="JALD2"& DT>as.POSIXct("2018-08-27 01:00:00", tz="UTC")~"BAD",
-                    Station=="EELD1"& DT>as.POSIXct("2019-06-29 05:00:00", tz="UTC")&DT<as.POSIXct("2019-07-04 20:00:00", tz="UTC") ~"QM"))
+           case_when(station=="JALD2"& date_time>as.POSIXct("2018-08-27 01:00:00", tz="UTC")~"BAD",
+                     station=="EELD1"& date_time>as.POSIXct("2019-06-29 05:00:00", tz="UTC")&date_time<as.POSIXct("2019-07-04 20:00:00", tz="UTC") ~"QM",
+                     TRUE ~"VALID"))
 
 ```
 
 Final plots
 
 ```{r plot, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
-ggplot(TCM_Curr, aes(DT, Speed_cm_s))+
+ggplot(TCM_Curr, aes(date_time, speed_cm_s))+
   geom_point(aes(color=flags))+
-  facet_wrap(~Station, scales="free")+
+  facet_wrap(~station, scales="free")+
   theme_cowplot()
 
-ggplot(TCM_Curr, aes(DT))+
-  geom_line(aes(y=Vel_N,color="Vel_N"))+
-  geom_line(aes(y=Vel_E,color="Vel_E"))+
-  facet_wrap(~Station, scales="free")+
+ggplot(TCM_Curr, aes(date_time))+
+  geom_line(aes(y=vel_N,color="vel_N"))+
+  geom_line(aes(y=vel_E,color="vel_E"))+
+  facet_wrap(~station, scales="free")+
   theme_cowplot()+
-  scale_color_manual(breaks = c("Vel_N", "Vel_E"),values = c("Vel_N"="black", "Vel_E"="blue"))
+  scale_color_manual(breaks = c("vel_N", "vel_E"),values = c("vel_N"="black", "vel_E"="blue"))
 
 
-ggplot(TCM_Temp, aes(DT, Temperature))+
-  geom_line(aes(color=Station))+
+ggplot(TCM_Temp, aes(date_time, temperature))+
+  geom_line(aes(color=station))+
   theme_cowplot()
 ```
 
 write table
 
 ```{r}
-TCM2018to2019 <- full_join(TCM_Temp,TCM_Curr,by=c("Station","DT")) %>% 
+TCM2018to2019 <- full_join(TCM_Temp,TCM_Curr,by=c("station","date_time")) %>% 
   select(-flags,flags) #this join will be conservative (final table will not include temps for which there aren't current measurements)
 
 write.csv(TCM2018to2019, "BLE LTER TCM2018to2019.csv")
