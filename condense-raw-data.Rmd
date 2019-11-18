@@ -40,10 +40,10 @@ StarOddi$X5<-as.numeric(sub(",", ".", StarOddi$X5, fixed = TRUE))
 StarOddi$X6<-as.numeric(sub(",", ".", StarOddi$X6, fixed = TRUE))
 StarOddi$X7<-as.numeric(sub(",", ".", StarOddi$X7, fixed = TRUE))
 
-StarOddi<-StarOddi%>%mutate(Station=str_sub(FileName,15,19))%>%
-                              select(Station, Date=X2, Time=X3, Temp_C=X4, Sal=X5, Cond_mspercm=X6, SoundVel_mpers=X7)
+StarOddi<-StarOddi%>%mutate(station=str_sub(FileName,15,19))%>%
+                              select(station, Date=X2, Time=X3, temperature=X4, salinity=X5, conductivity=X6, sound_vel=X7)
 
-StarOddi$DT<-as_datetime(paste(as.Date(StarOddi$Date, format="%d.%m.%Y"), StarOddi$Time))
+StarOddi$date_time<-as_datetime(paste(as.Date(StarOddi$Date, format="%d.%m.%Y"), StarOddi$Time))
 ```
 
 
@@ -63,7 +63,7 @@ RBR <- filelist %>%
   map_df(read_excel, col_names = T, .id = "FileName")
 #Don't know what cols 11(temp?) and 12 are
 
-RBR<-RBR%>%mutate(Station=str_sub(FileName,29,33), DT=as.POSIXct(Timestamp, format="%d/%m/%Y %H:%M:%OS"))%>%
+RBR<-RBR%>%mutate(station=str_sub(FileName,29,33), date_time=as.POSIXct(Timestamp, format="%d/%m/%Y %H:%M:%OS"))%>%
   select(-Timestamp, -FileName, -...11, -...12)
 RBR<-RBR[,c(10,11,1:9)]# reorder columns
 
@@ -85,8 +85,8 @@ TCM_Temp <- filelist %>%
   set_names(.) %>%
   map_df(read_csv, .id = "FileName")
 
-TCM_Temp<-TCM_Temp%>%mutate(Station=str_sub(FileName,21,25))%>%
-  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`) 
+TCM_Temp<-TCM_Temp%>%mutate(station=str_sub(FileName,21,25))%>%
+  select(station, date_time=`ISO 8601 Time`, temperature=`Temperature (C)`) 
 ```
 
 
@@ -111,9 +111,9 @@ TCM_Curr <- filelist %>%
   set_names(.) %>%
   map_df(read_csv, .id = "FileName")
 
-TCM_Curr<-TCM_Curr%>%mutate(Station=str_sub(FileName,21,25))%>%
-  select(Station, DT=`ISO 8601 Time`, Speed_cm_s=`Speed (cm/s)`, Heading= `Heading (degrees)`,
-         Vel_N=`Velocity-N (cm/s)`, Vel_E=`Velocity-E (cm/s)`)
+TCM_Curr<-TCM_Curr%>%mutate(station=str_sub(FileName,21,25))%>%
+  select(station, date_time=`ISO 8601 Time`, speed_cm_s=`Speed (cm/s)`, heading= `Heading (degrees)`,
+         vel_N=`Velocity-N (cm/s)`, vel_E=`Velocity-E (cm/s)`)
 ```
 
 #Write files
