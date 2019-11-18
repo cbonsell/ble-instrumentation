@@ -210,10 +210,10 @@ StarOddi$X5&lt;-as.numeric(sub(&quot;,&quot;, &quot;.&quot;, StarOddi$X5, fixed 
 StarOddi$X6&lt;-as.numeric(sub(&quot;,&quot;, &quot;.&quot;, StarOddi$X6, fixed = TRUE))
 StarOddi$X7&lt;-as.numeric(sub(&quot;,&quot;, &quot;.&quot;, StarOddi$X7, fixed = TRUE))
 
-StarOddi&lt;-StarOddi%&gt;%mutate(Station=str_sub(FileName,15,19))%&gt;%
-                              select(Station, Date=X2, Time=X3, Temp_C=X4, Sal=X5, Cond_mspercm=X6, SoundVel_mpers=X7)
+StarOddi&lt;-StarOddi%&gt;%mutate(station=str_sub(FileName,15,19))%&gt;%
+                              select(station, Date=X2, Time=X3, temperature=X4, salinity=X5, conductivity=X6, sound_vel=X7)
 
-StarOddi$DT&lt;-as_datetime(paste(as.Date(StarOddi$Date, format=&quot;%d.%m.%Y&quot;), StarOddi$Time))</code></pre>
+StarOddi$date_time&lt;-as_datetime(paste(as.Date(StarOddi$Date, format=&quot;%d.%m.%Y&quot;), StarOddi$Time))</code></pre>
 </div>
 <div id="rbr-load-and-munging" class="section level1">
 <h1>RBR load and munging</h1>
@@ -238,7 +238,7 @@ RBR &lt;- filelist %&gt;%
 ## * `` -&gt; ...12</code></pre>
 <pre class="r"><code>#Don't know what cols 11(temp?) and 12 are
 
-RBR&lt;-RBR%&gt;%mutate(Station=str_sub(FileName,29,33), DT=as.POSIXct(Timestamp, format=&quot;%d/%m/%Y %H:%M:%OS&quot;))%&gt;%
+RBR&lt;-RBR%&gt;%mutate(station=str_sub(FileName,29,33), date_time=as.POSIXct(Timestamp, format=&quot;%d/%m/%Y %H:%M:%OS&quot;))%&gt;%
   select(-Timestamp, -FileName, -...11, -...12)
 RBR&lt;-RBR[,c(10,11,1:9)]# reorder columns</code></pre>
 </div>
@@ -291,8 +291,8 @@ TCM_Temp &lt;- filelist %&gt;%
 ##   `ISO 8601 Time` = col_datetime(format = &quot;&quot;),
 ##   `Temperature (C)` = col_double()
 ## )</code></pre>
-<pre class="r"><code>TCM_Temp&lt;-TCM_Temp%&gt;%mutate(Station=str_sub(FileName,21,25))%&gt;%
-  select(Station, DT=`ISO 8601 Time`, Temperature=`Temperature (C)`) </code></pre>
+<pre class="r"><code>TCM_Temp&lt;-TCM_Temp%&gt;%mutate(station=str_sub(FileName,21,25))%&gt;%
+  select(station, date_time=`ISO 8601 Time`, temperature=`Temperature (C)`) </code></pre>
 </div>
 <div id="tcm-current-loading-and-munging" class="section level1">
 <h1>TCM Current loading and munging</h1>
@@ -373,9 +373,9 @@ TCM_Curr &lt;- filelist %&gt;%
 ##   `Velocity-N (cm/s)` = col_double(),
 ##   `Velocity-E (cm/s)` = col_double()
 ## )</code></pre>
-<pre class="r"><code>TCM_Curr&lt;-TCM_Curr%&gt;%mutate(Station=str_sub(FileName,21,25))%&gt;%
-  select(Station, DT=`ISO 8601 Time`, Speed_cm_s=`Speed (cm/s)`, Heading= `Heading (degrees)`,
-         Vel_N=`Velocity-N (cm/s)`, Vel_E=`Velocity-E (cm/s)`)</code></pre>
+<pre class="r"><code>TCM_Curr&lt;-TCM_Curr%&gt;%mutate(station=str_sub(FileName,21,25))%&gt;%
+  select(station, date_time=`ISO 8601 Time`, speed_cm_s=`Speed (cm/s)`, heading= `Heading (degrees)`,
+         vel_N=`Velocity-N (cm/s)`, vel_E=`Velocity-E (cm/s)`)</code></pre>
 </div>
 <div id="write-files" class="section level1">
 <h1>Write files</h1>
