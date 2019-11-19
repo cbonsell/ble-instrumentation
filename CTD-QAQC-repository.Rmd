@@ -11,199 +11,203 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Important info
 
-* Data came from either RBR CTDs of Star Oddi CSTs
+* Data come from either RBR CTDs of Star Oddi CSTs (this code puts both into final dataset)
 * EWLD1 and KALD1 (Star Oddi) were calibrated based on YSI sonde measurements, other stations looked good
     + KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
 * EELD1 got buried. Data flagged as QM (questionable) by trained human. Temperature data looks ok, but use with caution. 
 * Data below freezing line flagged as INV (invalid) by algorithm
 * Other suspicious data (big linear drops in cond/sal) flagged as QM by trained human
 
-Final tables: 
-
-[RBR](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20RBRCTD%202018to2019.csv)
-
-[StarOddi](https://github.com/cbonsell/ble-instrumentation/blob/master/results/BLE%20LTER%20StarOddiCST%202018to2019.csv)
-
 
 ## Code and plots:
 
 Required packages:
 
-```{r libs, message=FALSE}
+```{r libs, echo=FALSE, message=FALSE}
 library(tidyverse)
 library(lubridate)
+library(janitor)
 library(cowplot)
+library(devtools)
+devtools::install_github("atn38/insitu", force=TRUE)
+library(insitu)
 ```
 
 
 Read in data
 ```{r ysi_data, message=FALSE, warning=FALSE}
 
-RBR <- read_csv("results/BLE LTER RBRCTD 2018to2019.csv") %>% 
-  select(-flags_CondSal)# no calibrations were made, so can just show how the flag column was created from raw data
+RBR <- read_csv("RBR_condensed_raw.csv") %>% janitor::clean_names()# change colnames to lowercase
+
 
 StarOddi <- read_csv("StarOddi_condensed_raw.csv") #calibrations were made, so read in raw data for transformation
 
-YSI <- read_csv("YSI_for_calibration.csv", col_types = cols(DT = col_datetime(format = "%m/%d/%Y %H:%M")))
+YSI <- read_csv("YSI_for_calibration.csv", col_types = cols(date_time = col_datetime(format = "%m/%d/%Y %H:%M")))
 ```
 
 
+(re)Calibrate if needed
 
-Calibrate EWLD1 and KALD1 data
-```{r cal_EWLD_KALD1, message=FALSE, warning=FALSE}
-source('scr/TScalibration_functions.R') #functions to calibrate temperature, conductivity and salinity, using YSI calibration measurements
-source('scr/CondtoSal_miliS.R') #function to convert conductivity and temp to salinity
+* EWLD1 and KALD1 (Star Oddi) were calibrated based on YSI sonde measurements, other stations looked good
+    + KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
 
 
-EWLD10<-StarOddi%>%filter(Station=="EWLD1")%>%
-  left_join(YSI, by=c("Station","DT"))%>%
-  mutate(row=1:which(DT==max(DT)))%>%
-  rename(fixedCond=Conductivity, fixedTemp=Temperature)
+create calibrated data, in dataframe, and a column for which parameter is calibrated
+```{r cal_EWLD_KALD1_new, message=FALSE, warning=FALSE}
+to_cal<-StarOddi%>%filter(station=="EWLD1"|station=="KALD1")
+calibrated_cond <- calibrate_data(to_cal, YSI, cal_by = "conductivity", raw="conductivity")%>% 
+  select(-conductivity) %>% 
+  rename(conductivity=conductivity_calibrated)
 
-dates<-which(!is.na(EWLD10$fixedCond))#identify where YSI measurements took place, ignore the June ones bc we were off Station
-EWLD10$fixedCond[1]<-EWLD10$Cond_mspercm[1]#YSI reading in Aug 2018 doesn't make sense
-EWLD10<-EWLD10[c(min(dates):max(dates)),]
-EWLD1<-TSmidcal_SO(EWLD10,dates[2])
-EWLD1$Salinity<-Cond.to.Sal(EWLD1$fixedCond,EWLD1$fixedTemp)
+KALD1<-StarOddi%>%filter(station=="KALD1")
+KALD1c <- calibrate_data(KALD1, YSI, cal_by = c("temperature"), raw=c("temperature")) %>% 
+  select(-temperature) %>% 
+  rename(temperature= temperature_calibrated)
 
-EWLD1$Station<-"EWLD1_calibratedTC"
-
-EWLD1c<-EWLD1%>%mutate(Salinity=Cond.to.Sal(EWLD1$fixedCond,EWLD1$Temp_C))%>%
-  select(-fixedTemp)%>%rename(fixedTemp=Temp_C)
-EWLD1c$Station<-"EWLD1_calibratedCond"
-
-KALD10<-StarOddi%>%filter(Station=="KALD1")%>%
-  left_join(YSI, by=c("Station","DT"))%>%
-  mutate(row=1:which(DT==max(DT)))%>%
-  rename(fixedCond=Conductivity, fixedTemp=Temperature)
-dates<-which(!is.na(KALD10$fixedCond))#identify where YSI measurements took place, ignore the June ones bc we were off Station
-KALD10$fixedCond[1]<-KALD10$Cond_mspercm[1]#no YSI reading in Aug 2018
-KALD10$fixedTemp[1]<-KALD10$Temp_C[1]
-KALD10<-KALD10[c(1:max(dates)),]
-KALD1<-TSmidcal_SO(KALD10,dates[1])
-KALD1$Salinity<-Cond.to.Sal(KALD1$fixedCond,KALD1$fixedTemp)
-
-KALD1$Station<-"KALD1_calibratedTC"
-
-KALD1c<-KALD1%>%mutate(Salinity=Cond.to.Sal(KALD1$fixedCond,KALD1$Temp_C))%>%
-  select(-fixedTemp)%>%rename(fixedTemp=Temp_C)
-KALD1c$Station<-"KALD1_calibratedCond"
-
-calibrated<-bind_rows(EWLD1,EWLD1c, KALD1, KALD1c)%>%
-  select(-Temp_C,-Sal,-Cond_mspercm)%>%
-  rename(Sal=Salinity,Temp_C=fixedTemp,Cond_mspercm=fixedCond)
-
-StarOddi<-bind_rows(StarOddi,calibrated)
+calibrated <- left_join(calibrated_cond,KALD1c) %>% 
+  select(station,date_time, temperature, conductivity) %>% 
+  mutate(recalibrated_parameters=case_when(station=="EWLD1"~"T",
+                                         station=="KALD1"~"CT"))
 ```
 
-Identify invalid data from freezing line
-```{r Id_anom, message=FALSE, warning=FALSE}
-source('scr/TSoutliers_functions.R') #functions to identify invalid data from freezing line
+re-Merge and format StarOddi data
+derive salinity using UNESCO 1983 (=PSS-78)
 
-RBR2<-TSanom_workup(RBR, "Temperature", "Conductivity", .002,.01)
-SO2<-TSanom_workup(StarOddi, "Temp_C", "Cond_mspercm", .1,2)
+```{r SO_format, message=FALSE, warning=FALSE}
+StarOddi <- StarOddi%>%filter(station !="KALD1"& station!="EWLD1")%>%
+  bind_rows(calibrated) %>% 
+  select(station, date_time, temperature, conductivity, salinity, recalibrated_parameters)
+
+
+StarOddi$salinity <- round(calculate_salinity(StarOddi$conductivity, StarOddi$temperature), digits=2)
+
 ```
 
-Incorporate calibrated datasets for KALD1 and EWLD1
-```{r calibrate, message=FALSE, warning=FALSE}
-SO3<-SO2%>%filter(Station !="KALD1"&Station!="KALD1_calibratedCond"&
-                    Station!="EWLD1"&Station!="EWLD1_calibratedTC")%>%
-  mutate(Station=str_sub(Station,1,5),
-         calibrated=case_when(Station=="KALD1"|Station=="EWLD1" ~ TRUE))
+Identify/flag invalid data from freezing line
+
+```{r freeze_flag, message=FALSE, warning=FALSE}
+
+StarOddi %>% filter(station=="EWLD2") %>% 
+  plot_tempsal(.,"temperature","salinity","date_time", plottitle="Example of dataset with invalid data")
+
+
+StarOddi <- flag_salinity(StarOddi, Terror=.1, Cerror = 2, flag_scheme = c("VALID","INV"))
+
+
+ggplot(StarOddi, aes(date_time, salinity))+
+  geom_point(aes(color=anomalous))+
+  facet_wrap(~station)
+
+
+RBR <- flag_salinity(RBR, Terror=.002, Cerror = .01, flag_scheme = c("VALID","INV"))
+
+
+ggplot(RBR, aes(date_time, salinity))+
+  geom_point(aes(color=anomalous))+
+  facet_wrap(~station)
 ```
 
-Created column that denotes data flags
-```{r flag_data,  echo=FALSE, warning=FALSE, message=FALSE}
+Manually flag questionable data, choose which dataset to put in final dataframe if there are both RBR and Star Oddi at a station
 
-x<-RBR2%>%mutate(flag=F)%>%group_split(Station)
+```{r manual_flag,  echo=FALSE, warning=FALSE, message=FALSE}
+
+x<-RBR%>%group_split(station)
+
+#####################
+###use this function to determine index of questionable data
+#id_outlier(as.data.frame(x[2]))
+#####################
 
 EWLD2<-as.data.frame(x[2])
-EWLD2$flag[c(2901,4935:5108,5793:5962,7179,8217:8244)]<-T
+EWLD2$anomalous[c(2901,4935:5108,5793:5962,7179,8217:8244)]<-"QM"
 JALD2<-as.data.frame(x[3])
 KALD2<-as.data.frame(x[4])
 
-RBR_flagged<-bind_rows(EWLD2,JALD2,KALD2) %>%
-  select(Station, DT, Conductivity, Temperature, Pressure, 
-         Sea.pressure, Depth, Salinity, Speed.of.sound, 
-         Specific.conductivity, Density.anomaly, anom, flag)
+RBR_flagged<-bind_rows(EWLD2,JALD2,KALD2) 
 
-
-x<-SO3%>%mutate(flag=F)%>%group_split(Station)
+x<-StarOddi%>%group_split(station)
 
 EELD1<-as.data.frame(x[1])
-EELD1$flag[c(482:nrow(EELD1))]<-T
+EELD1$anomalous[c(482:nrow(EELD1))]<-"QM"
 
 EELD2<-as.data.frame(x[2])
-EELD2$flag[c(1:15,7127:7519)]<-T
+EELD2$anomalous[c(1:15,7127:7519)]<-"QM"
 
 EWLD1<-as.data.frame(x[3])
-EWLD1$flag[7524]<-T
+EWLD1$anomalous[7524]<-"QM"
 
 JALD1<-as.data.frame(x[5])
-JALD1$flag[c(2984,3387,7676:7891)]<-T
+JALD1$anomalous[c(2984,3387,7676:7891)]<-"QM"
 
 KALD1<-as.data.frame(x[7])
-KALD1$flag[c(8:194,5293,7641:8333)]<-T
+KALD1$anomalous[c(8:194,7641:8333)]<-"QM"
 
 
-SO_flagged<-bind_rows(EELD1,EELD2,EWLD1,JALD1,KALD1)%>%
-  select(Station, DT, Temperature=Temp_C, Salinity=Sal, Conductivity=Cond_mspercm,
-         Speed.of.sound=SoundVel_mpers, anom,flag,calibrated)
+SO_flagged<-bind_rows(EELD1,EELD2,EWLD1,JALD1,KALD1)
 
 ```
+
+Create final datatables for each instrument
+designate cond/sal flags vs temperature flags
 
 ```{r flagged_table, echo=FALSE, warning=FALSE, message=FALSE}
-RBR_final<-RBR_flagged%>%mutate(flags_CondSal=case_when(flag==T~"QM", anom==T~"INV"))
-SO_final<-SO_flagged%>%mutate(flags_CondSal=case_when(flag==T~"QM", anom==T~"INV"), 
-                                flags_Temperature=case_when(flag==T & Station=="EELD1" ~ "QM"))
+RBR_final<-RBR_flagged%>%rename(flags_condsal=anomalous) %>% 
+  mutate(instrument="RBR")
+
+SO_final<-SO_flagged %>% 
+  mutate(flags_temperature=case_when(anomalous=="QM" & station=="EELD1" ~ "QM", 
+                                     TRUE ~ "VALID"),
+         instrument="StarOddi")%>%
+  rename(flags_condsal=anomalous)
 ```
 
-# Finalize tables
+# Finalize table into combined, derived "CTD" data
+CTD data table is nicely arranged
+
 ```{r finalize, warning=FALSE, message=FALSE, fig.width=11, fig.height=8, fig.fullwidth=TRUE}
 #Finalize and write csvs
 
 #RBR puts NA at date at daylight savings time, grrr
-RBR_final<-RBR_final[!is.na(RBR_final$Station),]
-RBR_final$DT<-force_tz(RBR_final$DT, tz="UTC")
-RBR_final$DT[is.na(RBR_final$DT)]<-as.POSIXct("2019-03-10 02:00:00", tz="UTC")
+RBR_final<-RBR_final[!is.na(RBR_final$station),]
+RBR_final$date_time<-force_tz(RBR_final$date_time, tz="UTC")
+RBR_final$date_time[is.na(RBR_final$date_time)]<-as.POSIXct("2019-03-10 02:00:00", tz="UTC")
 
-# remove unneeded cols
-RBR_final<-RBR_final%>%select(-anom, -flag)
+CTD <- bind_rows(RBR_final, SO_final) %>% 
+  arrange(station, date_time) %>% #change row order
+  select(station:date_time, instrument, recalibrated_parameters, conductivity:temperature, salinity, pressure:depth, speed_of_sound:density_anomaly, flags_condsal, flags_temperature) #change column order
 
-SO_final<-SO_final%>%select(-anom, -flag)
+CTD$recalibrated_parameters[is.na(CTD$recalibrated_parameters)] <- "NONE"
+CTD$flags_temperature[is.na(CTD$flags_temperature)] <- "VALID"
 
 ```
 
 Display data
 
-```{r}
+```{r final_plots, warning=FALSE, message=FALSE}
 #plots
-ggplot(RBR_final, aes(DT, Temperature))+
-  geom_point(alpha=0.5)+
-  geom_point(data=SO_final, aes(DT, Temperature, color=SO_final$flags_Tempurature), alpha=0.5)+
-  facet_wrap(~Station)+
+ggplot(CTD, aes(date_time, temperature))+
+  geom_point(aes(color=flags_temperature),alpha=0.5)+
+  facet_wrap(~station)+
   theme_cowplot()
 
-ggplot(RBR_final, aes(DT,Salinity))+
-  geom_point(aes(color=flags_CondSal), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT,Salinity, color=flags_CondSal), alpha=0.5)+
-  facet_wrap(~Station)+
+ggplot(CTD, aes(date_time, salinity))+
+  geom_point(aes(color=flags_condsal), alpha=0.5)+
+  facet_wrap(~station)+
   theme_cowplot()
 
-ggplot(RBR_final, aes(DT, Conductivity))+
-  geom_point(aes(color=flags_CondSal), alpha=0.5)+
-  geom_point(data=SO_final, aes(DT,Conductivity, color=flags_CondSal), alpha=0.5)+
-  facet_wrap(~Station)+
+ggplot(CTD, aes(date_time, conductivity))+
+  geom_point(aes(color=flags_condsal), alpha=0.5)+
+  facet_wrap(~station)+
   theme_cowplot()
 
-ggplot(RBR_final, aes(DT, Sea.pressure))+
-  geom_point(aes(color=Station), alpha=0.5)+
+ggplot(CTD, aes(date_time, sea_pressure))+
+  geom_point(aes(color=station), alpha=0.5)+
   theme_cowplot()
 ```
 
-Write csvs
+Write csv
 ```{r derived-data}
-write.csv(RBR_final, "results/BLE LTER RBRCTD 2018to2019.csv")
-write.csv(SO_final, "results/BLE LTER StarOddiCST 2018to2019.csv")
+write.csv(CTD, "results/BLE LTER insituCTD 2018to2019.csv")
+
 ```
 
