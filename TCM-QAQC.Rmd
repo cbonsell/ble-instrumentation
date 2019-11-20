@@ -93,6 +93,6 @@ write table
 TCM2018to2019 <- full_join(TCM_Temp,TCM_Curr,by=c("station","date_time")) %>% 
   select(-flags,flags) #this join will be conservative (final table will not include temps for which there aren't current measurements)
 
-write.csv(TCM2018to2019, "BLE LTER TCM2018to2019.csv")
+write.csv(TCM2018to2019, "derived_BLE_TCM_2018to2019.csv")
 ```
 

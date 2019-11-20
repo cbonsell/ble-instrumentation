@@ -242,7 +242,7 @@ TCM_Curr&lt;-TCM_Curr%&gt;%
 <pre class="r"><code>TCM2018to2019 &lt;- full_join(TCM_Temp,TCM_Curr,by=c(&quot;station&quot;,&quot;date_time&quot;)) %&gt;% 
   select(-flags,flags) #this join will be conservative (final table will not include temps for which there aren't current measurements)
 
-write.csv(TCM2018to2019, &quot;BLE LTER TCM2018to2019.csv&quot;)</code></pre>
+write.csv(TCM2018to2019, &quot;derived_BLE_TCM_2018to2019.csv&quot;)</code></pre>
 </div>
 
 

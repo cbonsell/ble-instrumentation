@@ -14,12 +14,12 @@ Important info
 * Data come from either RBR CTDs of Star Oddi CSTs (this code puts both into final dataset)
 * EWLD1 and KALD1 (Star Oddi) were calibrated based on YSI sonde measurements, other stations looked good
     + KALD1 calibrated for Temp and Cond, EWLD1 calibrated for Cond
-* EELD1 got buried. Data flagged as QM (questionable) by trained human. Temperature data looks ok, but use with caution. 
-* Data below freezing line flagged as INV (invalid) by algorithm
-* Other suspicious data (big linear drops in cond/sal) flagged as QM by trained human
+* EELD1 got buried, was recording sediment temperature. Data flagged as **QM** (questionable) by trained human. Temperature data looks ok (but with low max temps), use with caution. 
+* Data below freezing line flagged as **INV** (invalid) by algorithm
+* Other suspicious data (big linear drops in cond/sal) flagged as **QM** by trained human. These drops are common in areas with high turbidity and are caused by obstructions (such as sediment) the conductivity cup.
 
 
-## Code and plots:
+## Work-up code and plots:
 
 Required packages:
 
@@ -92,17 +92,15 @@ Identify/flag invalid data from freezing line
 StarOddi %>% filter(station=="EWLD2") %>% 
   plot_tempsal(.,"temperature","salinity","date_time", plottitle="Example of dataset with invalid data")
 
-#plot_tempsal(KALD1,"temperature","salinity","date_time", plottitle="Example of dataset with invalid data")
 StarOddi <- flag_salinity(StarOddi, Terror=.1, Cerror = 2, flag_scheme = c("VALID","INV"))
+
+RBR <- flag_salinity(RBR, Terror=.002, Cerror = .01, flag_scheme = c("VALID","INV"))
 
 
 ggplot(StarOddi, aes(date_time, salinity))+
   geom_point(aes(color=anomalous))+
   facet_wrap(~station)+
   theme_cowplot()
-
-
-RBR <- flag_salinity(RBR, Terror=.002, Cerror = .01, flag_scheme = c("VALID","INV"))
 
 
 ggplot(RBR, aes(date_time, salinity))+
@@ -119,7 +117,8 @@ x<-RBR%>%group_split(station)
 
 #####################
 ###use this function to determine index of questionable data
-#id_outlier(as.data.frame(x[2]))
+# id_outlier(as.data.frame(x[2]), plot_type = "sal/time")
+# id_outlier(as.data.frame(x[2]), plot_type = "temp/sal")
 #####################
 
 EWLD2<-as.data.frame(x[2])
