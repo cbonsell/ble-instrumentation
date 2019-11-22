@@ -225,7 +225,7 @@ KALD1c &lt;- calibrate_data(KALD1, YSI, cal_by = c(&quot;temperature&quot;), raw
   rename(temperature= temperature_calibrated)
 
 calibrated &lt;- left_join(calibrated_cond,KALD1c) %&gt;% 
-  select(station,date_time, temperature, conductivity) %&gt;% 
+  select(station,date_time, temperature, conductivity, sound_vel) %&gt;% 
   mutate(recalibrated_parameters=case_when(station==&quot;EWLD1&quot;~&quot;T&quot;,
                                          station==&quot;KALD1&quot;~&quot;CT&quot;))
 
@@ -293,14 +293,14 @@ CTD$flags_temperature[is.na(CTD$flags_temperature)] &lt;- &quot;VALID&quot;</cod
 ##                          3rd Qu.:29.07   3rd Qu.: 0.2202   3rd Qu.:36.28  
 ##                          Max.   :38.57   Max.   :12.3100   Max.   :44.14  
 ##                                                                           
-##     pressure      sea_pressure       depth       speed_of_sound 
-##  Min.   :12.30   Min.   :2.17    Min.   :2.15    Min.   :1403   
-##  1st Qu.:13.09   1st Qu.:2.95    1st Qu.:2.93    1st Qu.:1435   
-##  Median :13.43   Median :3.30    Median :3.28    Median :1441   
-##  Mean   :13.34   Mean   :3.21    Mean   :3.19    Mean   :1441   
-##  3rd Qu.:13.60   3rd Qu.:3.47    3rd Qu.:3.44    3rd Qu.:1446   
-##  Max.   :14.20   Max.   :4.07    Max.   :4.03    Max.   :1490   
-##  NA's   :44076   NA's   :44076   NA's   :44076   NA's   :17692  
+##     pressure      sea_pressure       depth       speed_of_sound
+##  Min.   :12.30   Min.   :2.17    Min.   :2.15    Min.   :1400  
+##  1st Qu.:13.09   1st Qu.:2.95    1st Qu.:2.93    1st Qu.:1435  
+##  Median :13.43   Median :3.30    Median :3.28    Median :1440  
+##  Mean   :13.34   Mean   :3.21    Mean   :3.19    Mean   :1441  
+##  3rd Qu.:13.60   3rd Qu.:3.47    3rd Qu.:3.44    3rd Qu.:1446  
+##  Max.   :14.20   Max.   :4.07    Max.   :4.03    Max.   :1490  
+##  NA's   :44076   NA's   :44076   NA's   :44076                 
 ##  specific_conductivity density_anomaly flags_condsal     
 ##  Min.   : 9829         Min.   :-2.27   Length:70513      
 ##  1st Qu.:47074         1st Qu.:-1.80   Class :character  

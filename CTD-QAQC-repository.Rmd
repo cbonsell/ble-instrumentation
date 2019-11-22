@@ -65,7 +65,7 @@ KALD1c <- calibrate_data(KALD1, YSI, cal_by = c("temperature"), raw=c("temperatu
   rename(temperature= temperature_calibrated)
 
 calibrated <- left_join(calibrated_cond,KALD1c) %>% 
-  select(station,date_time, temperature, conductivity) %>% 
+  select(station,date_time, temperature, conductivity, sound_vel) %>% 
   mutate(recalibrated_parameters=case_when(station=="EWLD1"~"T",
                                          station=="KALD1"~"CT"))
 
