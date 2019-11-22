@@ -78,7 +78,7 @@ derive salinity using UNESCO 1983 (=PSS-78)
 ```{r SO_format, message=FALSE, warning=FALSE}
 StarOddi <- StarOddi%>%filter(station !="KALD1"& station!="EWLD1")%>%
   bind_rows(calibrated) %>% 
-  select(station, date_time, temperature, conductivity, salinity, recalibrated_parameters)
+  select(station, date_time, temperature, conductivity, salinity, speed_of_sound=sound_vel, recalibrated_parameters)
 
 
 StarOddi$salinity <- round(calculate_salinity(StarOddi$conductivity, StarOddi$temperature), digits=2)

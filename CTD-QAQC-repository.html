@@ -233,7 +233,7 @@ calibrated_cond &lt;- calibrate_data(to_cal, YSI, cal_by = &quot;conductivity&qu
 <p>re-Merge and format StarOddi data derive salinity using UNESCO 1983 (=PSS-78)</p>
 <pre class="r"><code>StarOddi &lt;- StarOddi%&gt;%filter(station !=&quot;KALD1&quot;&amp; station!=&quot;EWLD1&quot;)%&gt;%
   bind_rows(calibrated) %&gt;% 
-  select(station, date_time, temperature, conductivity, salinity, recalibrated_parameters)
+  select(station, date_time, temperature, conductivity, salinity, speed_of_sound=sound_vel, recalibrated_parameters)
 
 
 StarOddi$salinity &lt;- round(calculate_salinity(StarOddi$conductivity, StarOddi$temperature), digits=2)</code></pre>
@@ -294,13 +294,13 @@ CTD$flags_temperature[is.na(CTD$flags_temperature)] &lt;- &quot;VALID&quot;</cod
 ##                          Max.   :38.57   Max.   :12.3100   Max.   :44.14  
 ##                                                                           
 ##     pressure      sea_pressure       depth       speed_of_sound 
-##  Min.   :12.30   Min.   :2.17    Min.   :2.15    Min.   :1416   
-##  1st Qu.:13.09   1st Qu.:2.95    1st Qu.:2.93    1st Qu.:1439   
-##  Median :13.43   Median :3.30    Median :3.28    Median :1444   
-##  Mean   :13.34   Mean   :3.21    Mean   :3.19    Mean   :1447   
-##  3rd Qu.:13.60   3rd Qu.:3.47    3rd Qu.:3.44    3rd Qu.:1452   
+##  Min.   :12.30   Min.   :2.17    Min.   :2.15    Min.   :1403   
+##  1st Qu.:13.09   1st Qu.:2.95    1st Qu.:2.93    1st Qu.:1435   
+##  Median :13.43   Median :3.30    Median :3.28    Median :1441   
+##  Mean   :13.34   Mean   :3.21    Mean   :3.19    Mean   :1441   
+##  3rd Qu.:13.60   3rd Qu.:3.47    3rd Qu.:3.44    3rd Qu.:1446   
 ##  Max.   :14.20   Max.   :4.07    Max.   :4.03    Max.   :1490   
-##  NA's   :44076   NA's   :44076   NA's   :44076   NA's   :44076  
+##  NA's   :44076   NA's   :44076   NA's   :44076   NA's   :17692  
 ##  specific_conductivity density_anomaly flags_condsal     
 ##  Min.   : 9829         Min.   :-2.27   Length:70513      
 ##  1st Qu.:47074         1st Qu.:-1.80   Class :character  
