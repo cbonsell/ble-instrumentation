@@ -19,7 +19,9 @@ Important info
 * Suspiciously high currents at EELD1 June 29- Jul4 
     + EELD1 between 2019-06-29 05:00:00 and 2019-07-04 20:00:00 flagged as **QM** (questionable)
 
-* EWLD1 battery died June 15 2019
+* EWLD1 battery died 15 June 2019
+
+* KALD2 died 20 Jul 2019 at 16:00
 
 
 Settings from Lowell software data conversion:
@@ -47,8 +49,8 @@ library(cowplot)
 Read in data
 
 ```{r, message=FALSE, warning=FALSE}
-TCM_Curr <- read_csv("TCMcurrent_condensed_raw.csv") 
-TCM_Temp <- read_csv("TCMtemperature_condensed_raw.csv")
+TCM_Curr <- read_csv("TCMcurrent_condensed_raw.csv",  col_types = cols(date_time = col_datetime(format = "%m/%d/%Y %H:%M"))) 
+TCM_Temp <- read_csv("TCMtemperature_condensed_raw.csv",  col_types = cols(date_time = col_datetime(format = "%m/%d/%Y %H:%M")))
 ```
 
 
@@ -65,6 +67,7 @@ TCM_Curr<-TCM_Curr%>%
                      TRUE ~"VALID"))
 
 ```
+
 
 Final plots
 
@@ -87,12 +90,27 @@ ggplot(TCM_Temp, aes(date_time, temperature))+
   theme_cowplot()
 ```
 
-write table
+merge table
 
-```{r}
-TCM2018to2019 <- full_join(TCM_Temp,TCM_Curr,by=c("station","date_time")) %>% 
+```{r merge}
+TCM2018to2019 <- inner_join(TCM_Temp,TCM_Curr,by=c("station","date_time")) %>% 
   select(-flags,flags) #this join will be conservative (final table will not include temps for which there aren't current measurements)
 
+
+```
+
+
+Basic info
+```{r info}
+summary(TCM2018to2019)
+table(TCM2018to2019$station)
+```
+
+
+```{r write}
 write.csv(TCM2018to2019, "derived_BLE_TCM_2018to2019.csv")
 ```
+
+
+
 
